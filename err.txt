@@ -1,0 +1,14 @@
+
+✅ Versions:
+Application:   syft
+Version:       1.28.0
+BuildDate:     2025-07-02T16:25:12Z
+GitCommit:     e8b62ab9aca2e896ab608c118619c5a7831bc737
+GitDescription: v1.28.0
+Platform:      linux/amd64
+GoVersion:     go1.24.4
+Compiler:      gc
+SchemaVersion: 16.0.34
+Version: 0.64.1
+/home/mypc/scancode-toolkit/scancode: line 139: /home/mypc/scancode-toolkit/venv/bin/scancode: No such file or directory
+
