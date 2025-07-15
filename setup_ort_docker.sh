@@ -37,13 +37,22 @@ if [ ! -d "$SCANCODE_DIR" ]; then
   rm scancode.zip
 fi
 
+# --- Initialize ScanCode Toolkit Virtualenv ---
+echo "🔧 Initializing ScanCode Toolkit..."
+cd "$SCANCODE_DIR"
+./scancode --version || {
+  echo "❌ ScanCode setup failed."
+  exit 1
+}
+cd -
+
 export PATH="$PATH:$(pwd)/bin:$SCANCODE_DIR"
 
 # --- Verify Tools ---
 echo "✅ Tool Versions:"
 ./bin/syft version
 ./bin/trivy version
-$SCANCODE_DIR/scancode --version
+"$SCANCODE_DIR/scancode" --version
 ort --version || { echo "❌ ORT CLI not found. Please install it or use Docker fallback."; exit 1; }
 
 # --- Scanning Begins ---
@@ -54,7 +63,7 @@ echo "🛡️ Running Trivy scan..."
 ./bin/trivy fs $PROJECT_DIR --format json --output "$REPORT_DIR/trivy-report.json"
 
 echo "🔍 Running ScanCode Toolkit..."
-$SCANCODE_DIR/scancode --license --copyright --info \
+"$SCANCODE_DIR/scancode" --license --copyright --info \
   --json-pp "$REPORT_DIR/scancode-report.json" "$PROJECT_DIR"
 
 echo "🔬 Running ORT pipeline..."
