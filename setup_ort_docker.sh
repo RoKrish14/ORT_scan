@@ -28,7 +28,7 @@ if [ ! -f ./bin/trivy ]; then
   curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b ./bin
 fi
 
-# --- Install ScanCode Toolkit ---
+# --- Download ScanCode Toolkit if not present ---
 if [ ! -d "$SCANCODE_DIR" ]; then
   echo "🔍 Downloading ScanCode Toolkit..."
   wget -q https://github.com/nexB/scancode-toolkit/releases/download/v32.1.1/scancode-toolkit-32.1.1.zip -O scancode.zip
@@ -37,14 +37,21 @@ if [ ! -d "$SCANCODE_DIR" ]; then
   rm scancode.zip
 fi
 
-# --- Initialize ScanCode Toolkit Virtualenv ---
-echo "🔧 Initializing ScanCode Toolkit..."
-cd "$SCANCODE_DIR"
-./scancode --version || {
-  echo "❌ ScanCode setup failed."
+# --- Check for ScanCode virtualenv ---
+if [ ! -f "$SCANCODE_DIR/venv/bin/scancode" ]; then
+  echo ""
+  echo "❌ ScanCode virtualenv not initialized!"
+  echo "➡️  Please run the following manually before retrying:"
+  echo ""
+  echo "   cd ~/scancode-toolkit"
+  echo "   python3 -m venv venv"
+  echo "   source venv/bin/activate"
+  echo "   pip install -r requirements.txt"
+  echo "   ./scancode --version"
+  echo "   deactivate"
+  echo ""
   exit 1
-}
-cd -
+fi
 
 export PATH="$PATH:$(pwd)/bin:$SCANCODE_DIR"
 
@@ -53,9 +60,9 @@ echo "✅ Tool Versions:"
 ./bin/syft version
 ./bin/trivy version
 "$SCANCODE_DIR/scancode" --version
-ort --version || { echo "❌ ORT CLI not found. Please install it or use Docker fallback."; exit 1; }
+ort --version || { echo "❌ ORT CLI not found. Please install it."; exit 1; }
 
-# --- Scanning Begins ---
+# --- Run Scans ---
 echo "📦 Generating SBOM with Syft..."
 ./bin/syft dir:$PROJECT_DIR -o spdx-json > "$REPORT_DIR/sbom.spdx.json"
 
