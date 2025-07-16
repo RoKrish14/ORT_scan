@@ -1,16 +1,20 @@
-forceOverwrite: true
+ort:
+  forceOverwrite: true
 
-licenseConfiguration:
-  licenseClassificationsFile: /root/.ort/config/license-classifications.yml
+  licenseConfiguration:
+    licenseClassificationsFile: /root/.ort/config/license-classifications.yml
 
-reporter:
-  options:
-    WebApp:
-      title: "OSS Review Dashboard"
-      footer: "Generated using ORT"
+  scanner:
+    archive:
+      fileStorage:
+        type: FileStorage
+        directory: /tmp/ort-scanner-archives
 
-scanner:
-  archive:
-    fileStorage:
-      type: "FileStorage"
-      directory: "/tmp/ort-scanner-archives"
+  reporter:
+    options:
+      WebApp:
+        title: "OSS Review Dashboard"
+        footer: "Generated using ORT"
+      NoticeReporter:
+        copyrightGarbage:
+          - "Copyright (c) 2023 Acme"
