@@ -21,10 +21,29 @@ echo "---"
 echo "✅ Tool Versions:"
 docker run --rm anchore/syft:latest version
 docker run --rm aquasec/trivy:latest version
-docker run --rm \
-  -v "$(pwd)":/workspace \
-  ort-cli \
-  --version || echo "❌ ORT image not found yet (will build below)."
+
+# -----------------------------
+# DETECT ARCHITECTURE FOR ORT BINARY
+# -----------------------------
+
+echo "---"
+echo "🧠 Detecting host architecture..."
+
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64)
+    ORT_BINARY="ort-linux-x86_64"
+    ;;
+  aarch64 | arm64)
+    ORT_BINARY="ort-linux-arm64"
+    ;;
+  *)
+    echo "❌ Unsupported architecture: $ARCH"
+    exit 1
+    ;;
+esac
+
+echo "📦 Will use ORT binary: $ORT_BINARY"
 
 # -----------------------------
 # BUILD ORT DOCKER IMAGE (if not already)
@@ -32,20 +51,24 @@ docker run --rm \
 
 if [ -z "$(docker images -q ort-cli)" ]; then
   echo "---"
-  echo "🐳 Building ORT Docker image..."
+  echo "🐳 Building ORT Docker image for $ARCH..."
+
   docker build -t ort-cli - <<EOF
-FROM eclipse-temurin:17-jdk-alpine
-WORKDIR /opt/ort
-RUN apk add --no-cache curl git bash && \
-    curl -s https://api.github.com/repos/oss-review-toolkit/ort/releases/latest \\
-    | grep "browser_download_url.*ort" \\
-    | grep -v ".asc" \\
-    | cut -d '"' -f 4 \\
-    | xargs curl -Lo ort && chmod +x ort
-ENTRYPOINT ["./ort"]
+FROM eclipse-temurin:21-jdk-alpine
+WORKDIR /workspace
+RUN apk add --no-cache curl bash git && \
+    curl -Lo /usr/local/bin/ort https://github.com/oss-review-toolkit/ort/releases/latest/download/$ORT_BINARY && \
+    chmod +x /usr/local/bin/ort
+ENTRYPOINT ["ort"]
 EOF
+
   echo "✅ ORT Docker image built as 'ort-cli'"
 fi
+
+# Show ORT version
+docker run --rm -v "$(pwd)":/workspace ort-cli --version || {
+  echo "❌ ORT image failed to run"; exit 1;
+}
 
 # -----------------------------
 # SYFT - Generate SBOM
@@ -113,5 +136,18 @@ docker run --rm \
     -f WebApp,StaticHtml,SpdxDocument
 
 echo "✅ ORT reports generated in $REPORT_DIR"
-echo "---"
-echo "🎉 OSS Review pipeline complete!"
+
+# -----------------------------
+# DASHBOARD (WebApp viewer)
+# -----------------------------
+
+DASHBOARD_DIR="$REPORT_DIR/ort-web-app"
+if [ -d "$DASHBOARD_DIR" ]; then
+  echo "---"
+  echo "📊 Starting ORT Dashboard at http://localhost:8000 ..."
+  cd "$DASHBOARD_DIR"
+  python3 -m http.server 8000
+else
+  echo "⚠️ Dashboard directory not found: $DASHBOARD_DIR"
+  echo "Check if 'WebApp' format was correctly generated in the ORT report step."
+fi
