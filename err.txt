@@ -1,13 +1,7 @@
-🔬 Running ORT pipeline...
-Hoplite is configured to infer which sealed type to choose by inspecting the config values at runtime. This behaviour is now deprecated in favour of explicitly specifying the type through a discriminator field. In 3.0 this new behavior will become the default. To enable this behavior now (and disable this warning), invoke withExplicitSealedTypes() on the ConfigLoaderBuilder.
-Exception in thread "main" com.sksamuel.hoplite.ConfigException: Failed to load ORT configuration:
-    Missing class org.ossreviewtoolkit.model.config.OrtConfiguration from config
-	at org.ossreviewtoolkit.model.config.OrtConfiguration$Companion.load$lambda$9(OrtConfiguration.kt:190)
-	at com.sksamuel.hoplite.fp.ValidatedKt.getOrElse(Validated.kt:115)
-	at org.ossreviewtoolkit.model.config.OrtConfiguration$Companion.load(OrtConfiguration.kt:184)
-	at org.ossreviewtoolkit.cli.OrtMain.run(OrtMain.kt:152)
-	at com.github.ajalt.clikt.core.CoreCliktCommandKt.parse(CoreCliktCommand.kt:107)
-	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:78)
-	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:90)
-	at org.ossreviewtoolkit.cli.OrtMainKt.main(OrtMain.kt:85)
+Looking for ORT configuration in the following file:
+        /root/.ort/config/config.yml (does not exist)
+
+Usage: ort [<options>] <command> [<args>]...
+
+Error: None of the output files [/workspace/ort-results/analyzer-result.json] must exist yet. To overwrite output files set the 'forceOverwrite' option in 'config.yml'.
 mypc@Ubuntu1804:~/oss-review-fullstack$ 
