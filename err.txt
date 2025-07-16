@@ -1,4 +1,17 @@
-🔬 Running ORT pipeline...
-docker: Error response from daemon: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: exec: "./ort": permission denied: unknown.
-ERRO[0000] error waiting for container: context canceled 
-mypc@Ubuntu1804:~/oss-review-fullstack$ 
+echo "---"
+echo "🐳 Building ORT Docker image..."
+
+docker build -t ort-cli - <<'EOF'
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /workspace
+RUN apk add --no-cache curl bash git && \
+    curl -s https://api.github.com/repos/oss-review-toolkit/ort/releases/latest \
+    | grep "browser_download_url.*ort\"" \
+    | grep -v ".asc" \
+    | cut -d '"' -f 4 \
+    | xargs curl -Lo /usr/local/bin/ort && \
+    chmod +x /usr/local/bin/ort
+ENTRYPOINT ["ort"]
+EOF
+
+echo "✅ ORT Docker image built as 'ort-cli'"
