@@ -29,8 +29,9 @@ docker run --rm aquasec/trivy:latest version
 echo "---"
 echo "🧠 Detecting host architecture..."
 
-ARCH=$(uname -m)
-case "$ARCH" in
+# Detect Docker architecture instead of host machine
+DOCKER_ARCH=$(docker run --rm alpine uname -m)
+case "$DOCKER_ARCH" in
   x86_64)
     ORT_BINARY="ort-linux-x86_64"
     ;;
@@ -38,12 +39,12 @@ case "$ARCH" in
     ORT_BINARY="ort-linux-arm64"
     ;;
   *)
-    echo "❌ Unsupported architecture: $ARCH"
+    echo "❌ Unsupported Docker architecture: $DOCKER_ARCH"
     exit 1
     ;;
 esac
 
-echo "📦 Will use ORT binary: $ORT_BINARY"
+echo "📦 Docker runtime arch: $DOCKER_ARCH → Using ORT binary: $ORT_BINARY"
 
 # -----------------------------
 # BUILD ORT DOCKER IMAGE (if not already)
