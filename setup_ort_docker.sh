@@ -22,11 +22,8 @@ echo "✅ Tool Versions:"
 docker run --rm anchore/syft:latest version
 docker run --rm aquasec/trivy:latest version
 
-echo "---"
-echo "🧠 Detecting host architecture..."
-
 # -----------------------------
-# DETECT DOCKER ARCHITECTURE & BUILD IMAGE
+# DETECT DOCKER ARCHITECTURE & BUILD ORT IMAGE
 # -----------------------------
 
 echo "---"
@@ -48,27 +45,28 @@ esac
 
 echo "📦 Docker arch: $DOCKER_ARCH → Using ORT binary: $ORT_BINARY"
 
-# Build ORT image (if not already)
-if [ -z "$(docker images -q ort-cli)" ]; then
-  echo "---"
-  echo "🐳 Building ORT Docker image..."
+echo "---"
+echo "🐳 Building ORT Docker image..."
 
-  docker build -t ort-cli - <<EOF
-FROM eclipse-temurin:21-jdk-alpine
+docker build -t ort-cli - <<EOF
+FROM eclipse-temurin:21-jdk  # Debian-based (fixes glibc issues)
 WORKDIR /workspace
 
-RUN apk add --no-cache curl bash git && \
+RUN apt-get update && apt-get install -y curl bash git && \
     curl -fLo /usr/local/bin/ort https://github.com/oss-review-toolkit/ort/releases/latest/download/$ORT_BINARY && \
-    chmod +x /usr/local/bin/ort
+    chmod +x /usr/local/bin/ort && \
+    file /usr/local/bin/ort
 
 ENTRYPOINT ["ort"]
 EOF
 
-  echo "✅ ORT Docker image built as 'ort-cli'"
-fi
+echo "✅ ORT Docker image built as 'ort-cli'"
 
-# Show ORT version to validate
-docker run --rm -v "$(pwd)":/workspace ort-cli --version || {
+# -----------------------------
+# CONFIRM ORT WORKS
+# -----------------------------
+
+docker run --rm ort-cli --version || {
   echo "❌ ORT image failed to run"; exit 1;
 }
 
