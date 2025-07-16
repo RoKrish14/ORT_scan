@@ -116,6 +116,9 @@ echo "✅ Trivy report written to $REPORT_DIR/trivy-report.json"
 echo "---"
 echo "🔬 Running ORT pipeline..."
 
+echo "🧹 Cleaning previous ORT result files..."
+rm -f "$ORT_DIR/"*.json "$ORT_DIR/"*.yml
+
 MOUNT_CONFIG="-v $(pwd)/$ORT_GLOBAL_CONFIG_DIR:/root/.ort/config"
 
 docker run --rm \
