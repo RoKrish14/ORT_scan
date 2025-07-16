@@ -1,26 +1,11 @@
-mypc@Ubuntu1804:~/oss-review-fullstack$ ./run_stack.sh 
----
-✅ Tool Versions:
-Application:   syft
-Version:       1.28.0
-BuildDate:     2025-07-02T16:25:12Z
-GitCommit:     e8b62ab9aca2e896ab608c118619c5a7831bc737
-GitDescription: v1.28.0
-Platform:      linux/amd64
-GoVersion:     go1.24.4
-Compiler:      gc
-SchemaVersion: 16.0.34
-Version: 0.64.1
----
-🧠 Detecting host architecture...
-Unable to find image 'alpine:latest' locally
-latest: Pulling from library/alpine
-9824c27679d3: Pulling fs layer
-9824c27679d3: Verifying Checksum
-9824c27679d3: Download complete
-9824c27679d3: Pull complete
-Digest: sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1
-Status: Downloaded newer image for alpine:latest
-📦 Docker runtime arch: x86_64 → Using ORT binary: ort-linux-x86_64
-exec ./ort: exec format error
-❌ ORT image failed to run
+Environment variables:                                                        
+HOME = /root                                                                  
+JAVA_HOME = /opt/java/openjdk                                                 
+                                                                              
+Looking for ORT configuration in the following file:
+        /root/.ort/config/config.yml (does not exist)
+
+Usage: ort analyze [<options>]
+
+Error: invalid value for --repository-configuration-file: file "repository.yml" does not exist.
+mypc@Ubuntu1804:~/oss-review-fullstack$ 
