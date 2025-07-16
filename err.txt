@@ -1,17 +1,13 @@
-# ~/oss-review-fullstack/repository.yml (THE TRUE FINAL CORRECTION)
----
-license_choices:
-  package_license_choices:
-    - package_id: "pkg:maven/org.example/project@1.0.0" # Ensure this PURL is correct.
-      license_choices:
-        - choice: "LicenseRef-scancode-gpl-2.0-plus"
-
-curations:
-  packages:
-    - id: "pkg:maven/org.example/project@1.0.0" # This is the package ID.
-      # This 'curations' field is a property of PackageCuration.
-      curations: # <--- This is where the PackageCurationData object starts.
-        comment: "Curation example" # <--- These properties go directly under 'curations'.
-        declared_license_mapping:
-          "GPL 2.0+": "GPL-2.0-or-later"
-        # Other properties like concluded_license, copyrights, etc. would go here too if needed.
+🔬 Running ORT pipeline...
+Hoplite is configured to infer which sealed type to choose by inspecting the config values at runtime. This behaviour is now deprecated in favour of explicitly specifying the type through a discriminator field. In 3.0 this new behavior will become the default. To enable this behavior now (and disable this warning), invoke withExplicitSealedTypes() on the ConfigLoaderBuilder.
+Exception in thread "main" com.sksamuel.hoplite.ConfigException: Failed to load ORT configuration:
+    Missing class org.ossreviewtoolkit.model.config.OrtConfiguration from config
+	at org.ossreviewtoolkit.model.config.OrtConfiguration$Companion.load$lambda$9(OrtConfiguration.kt:190)
+	at com.sksamuel.hoplite.fp.ValidatedKt.getOrElse(Validated.kt:115)
+	at org.ossreviewtoolkit.model.config.OrtConfiguration$Companion.load(OrtConfiguration.kt:184)
+	at org.ossreviewtoolkit.cli.OrtMain.run(OrtMain.kt:152)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.parse(CoreCliktCommand.kt:107)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:78)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:90)
+	at org.ossreviewtoolkit.cli.OrtMainKt.main(OrtMain.kt:85)
+mypc@Ubuntu1804:~/oss-review-fullstack$ 
