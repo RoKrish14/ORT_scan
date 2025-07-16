@@ -8,7 +8,7 @@ set -e
 PROJECT_DIR="./emoji-java"
 REPORT_DIR="./reports"
 ORT_DIR="./ort-results"
-ORT_GLOBAL_CONFIG_DIR="./ort/.ort/config"
+ORT_GLOBAL_CONFIG_DIR="./.ort/config"
 REPOSITORY_CONFIG_FILE="repository.yml"
 
 mkdir -p "$REPORT_DIR" "$ORT_DIR"
@@ -22,31 +22,23 @@ echo "✅ Tool Versions:"
 docker run --rm anchore/syft:latest version
 docker run --rm aquasec/trivy:latest version
 
-echo "---"
-echo "🧠 Detecting host architecture..."
-
 # -----------------------------
-# DETECT DOCKER ARCHITECTURE & BUILD IMAGE
+# DETECT DOCKER ARCHITECTURE
 # -----------------------------
 
 echo "---"
 echo "🧠 Detecting Docker runtime architecture..."
-# Using alpine here just for uname -m, it's a small image.
 DOCKER_ARCH=$(docker run --rm alpine uname -m)
 
 case "$DOCKER_ARCH" in
   x86_64)
-    # The ORT binary is inside a zip, and the version is hardcoded for now.
-    # We will download the zip and extract the binary.
-    ORT_VERSION="62.2.0" # Latest version as of current check
+    ORT_VERSION="62.2.0"
     ORT_ARCHIVE="ort-${ORT_VERSION}.zip"
     ;;
   aarch64 | arm64)
-    # ORT might offer arm64 builds, but we need to verify the archive name if this path is taken.
-    # For now, focusing on x86_64 as per user's output.
-    echo "⚠️ ARM64 detected, but ORT archive name for ARM64 not verified. Using x86_64 logic for now."
-    ORT_VERSION="62.2.0" # Latest version as of current check
-    ORT_ARCHIVE="ort-${ORT_VERSION}.zip" # Assuming same archive naming convention
+    echo "⚠️ ARM64 detected. Assuming archive name is same (untested)."
+    ORT_VERSION="62.2.0"
+    ORT_ARCHIVE="ort-${ORT_VERSION}.zip"
     ;;
   *)
     echo "❌ Unsupported Docker architecture: $DOCKER_ARCH"
@@ -56,20 +48,21 @@ esac
 
 echo "📦 Docker arch: $DOCKER_ARCH → Using ORT version: $ORT_VERSION from archive: $ORT_ARCHIVE"
 
-# Ensure a clean rebuild by removing the existing image
-docker rmi ort-cli || true # '|| true' prevents script from exiting if image doesn't exist
+# -----------------------------
+# BUILD ORT IMAGE
+# -----------------------------
 
-# Build ORT image (if not already)
-if [ -z "$(docker images -q ort-cli)" ]; then
-  echo "---"
-  echo "🐳 Building ORT Docker image..."
+echo "---"
+echo "🐳 Rebuilding ORT Docker image..."
+docker rmi ort-cli 2>/dev/null || true
 
-  docker build -t ort-cli - <<EOF
+docker build --build-arg ORT_VERSION="$ORT_VERSION" --build-arg ORT_ARCHIVE="$ORT_ARCHIVE" -t ort-cli - <<'EOF'
 FROM eclipse-temurin:21-jdk
-# Changed from eclipse-temurin:21-jdk-alpine - Moved comment to its own line
 WORKDIR /workspace
 
-# Install necessary packages, download, extract, and setup ORT binary
+ARG ORT_VERSION
+ARG ORT_ARCHIVE
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl bash git unzip && \
     rm -rf /var/lib/apt/lists/* && \
@@ -82,11 +75,13 @@ RUN apt-get update && \
 ENTRYPOINT ["ort"]
 EOF
 
-  echo "✅ ORT Docker image built as 'ort-cli'"
-fi
+echo "✅ ORT Docker image built as 'ort-cli'"
 
-# Show ORT version to validate
-docker run --rm -v "$(pwd)":/workspace ort-cli --version || {
+# -----------------------------
+# VERIFY ORT WORKS
+# -----------------------------
+
+docker run --rm ort-cli --version || {
   echo "❌ ORT image failed to run"; exit 1;
 }
 
@@ -121,8 +116,11 @@ echo "✅ Trivy report written to $REPORT_DIR/trivy-report.json"
 echo "---"
 echo "🔬 Running ORT pipeline..."
 
+MOUNT_CONFIG="-v $(pwd)/$ORT_GLOBAL_CONFIG_DIR:/root/.ort/config"
+
 docker run --rm \
   -v "$(pwd):/workspace" \
+  $MOUNT_CONFIG \
   -w /workspace \
   ort-cli analyze \
     -i "$PROJECT_DIR" \
@@ -132,6 +130,7 @@ docker run --rm \
 
 docker run --rm \
   -v "$(pwd):/workspace" \
+  $MOUNT_CONFIG \
   -w /workspace \
   ort-cli scan \
     -i "$ORT_DIR/analyzer-result.json" \
@@ -140,15 +139,17 @@ docker run --rm \
 
 docker run --rm \
   -v "$(pwd):/workspace" \
+  $MOUNT_CONFIG \
   -w /workspace \
   ort-cli evaluate \
     -i "$ORT_DIR/evaluator-input.yml" \
     -o "$ORT_DIR" \
-    --rules "$ORT_GLOBAL_CONFIG_DIR/rules.kts" \
+    --rules "/root/.ort/config/rules.kts" \
     --severity-threshold "ERROR"
 
 docker run --rm \
   -v "$(pwd):/workspace" \
+  $MOUNT_CONFIG \
   -w /workspace \
   ort-cli report \
     -i "$ORT_DIR/evaluator-result.yml" \
