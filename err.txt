@@ -1,31 +1,5 @@
-mypc@Ubuntu1804:~/oss-review-fullstack$ ls | grep Dockerfile
-mypc@Ubuntu1804:~/oss-review-fullstack$ rm  Dockerfile*
-rm: cannot remove 'Dockerfile*': No such file or directory
-mypc@Ubuntu1804:~/oss-review-fullstack$ rm  Dockerfile
-rm: cannot remove 'Dockerfile': No such file or directory
-mypc@Ubuntu1804:~/oss-review-fullstack$ chmod +x run_stack.sh 
-mypc@Ubuntu1804:~/oss-review-fullstack$ ./run_stack.sh 
----
-✅ Tool Versions:
-Application:   syft
-Version:       1.28.0
-BuildDate:     2025-07-02T16:25:12Z
-GitCommit:     e8b62ab9aca2e896ab608c118619c5a7831bc737
-GitDescription: v1.28.0
-Platform:      linux/amd64
-GoVersion:     go1.24.4
-Compiler:      gc
-SchemaVersion: 16.0.34
-Version: 0.64.1
----
 🧠 Detecting Docker runtime architecture...
 ---
 🔎 Fetching latest ScanCode Toolkit version...
-📦 Using ScanCode release: scancode-toolkit-v32.4.0_py3.10-windows.zip
-[+] Building 0.1s (2/2) FINISHED                                                
- => [internal] load build definition from Dockerfile                       0.0s
- => => transferring dockerfile: 2B                                         0.0s
- => CANCELED [internal] load .dockerignore                                 0.0s
- => => transferring context:                                               0.0s
-failed to solve with frontend dockerfile.v0: failed to read dockerfile: open /var/lib/docker/tmp/buildkit-mount2166356611/Dockerfile: no such file or directory
+❌ Failed to get latest ScanCode Toolkit URL.
 mypc@Ubuntu1804:~/oss-review-fullstack$ 
