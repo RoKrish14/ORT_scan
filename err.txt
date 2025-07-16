@@ -1,11 +1,19 @@
-mypc@Ubuntu1804:~/oss-review-fullstack$ ls -l .ort/config/config.yml
--rw-r--r-- 1 root root 242 Jul 16 23:29 .ort/config/config.yml
-mypc@Ubuntu1804:~/oss-review-fullstack$ cat .ort/config/config.yml
-# .ort/config/config.yml
-severeRuleViolationThreshold: ERROR
-severeIssueThreshold: ERROR
+sudo tee .ort/config/config.yml > /dev/null <<EOF
+ortConfiguration:
+  forceOverwrite: true
 
-licenseConfiguration:
-  # Optionally point to a license classification file
-  licenseClassificationsFile: /root/.ort/config/license-classifications.yml
-mypc@Ubuntu1804:~/oss-review-fullstack$ 
+  licenseConfiguration:
+    licenseClassificationsFile: /root/.ort/config/license-classifications.yml
+
+  reporter:
+    options:
+      WebApp:
+        title: "OSS Review Dashboard"
+        footer: "Generated using ORT"
+
+  scanner:
+    archive:
+      fileStorage:
+        type: "FileStorage"
+        directory: "/tmp/ort-scanner-archives"
+EOF
