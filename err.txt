@@ -1,11 +1,12 @@
- => ERROR [4/4] RUN curl -fLo /tmp/scancode.zip https://github.com/nexB/s  1.2s 
-------                                                                          
- > [4/4] RUN curl -fLo /tmp/scancode.zip https://github.com/nexB/scancode-toolkit/releases/download/v32.3.2/scancode-toolkit-32.3.2.zip &&     unzip /tmp/scancode.zip -d /opt &&     ln -s /opt/scancode-toolkit-32.3.2/scancode /usr/local/bin/scancode &&     chmod +x /usr/local/bin/scancode &&     rm -rf /tmp/scancode.zip:                                                                              
-#7 0.618   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-#7 0.618                                  Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-  0     9    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-#7 1.054 curl: (22) The requested URL returned error: 404
+ => CANCELED [build 1/4] FROM docker.io/library/node:18-alpine@sha256:8d6  0.1s
+ => => resolve docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3  0.0s
+ => => sha256:8d6421d663b4c28fd3ebc498332f249011d11894558 7.67kB / 7.67kB  0.0s
+ => => sha256:929b04d7c782f04f615cf785488fed452b6569f87c7 1.72kB / 1.72kB  0.0s
+ => => sha256:ee77c6cd7c1886ecc802ad6cedef3a8ec1ea27d1fb9 6.18kB / 6.18kB  0.0s
+ => CACHED [build 2/4] WORKDIR /app                                        0.0s
+ => ERROR [build 3/4] COPY ort-web-app/ .                                  0.0s
 ------
-executor failed running [/bin/sh -c curl -fLo /tmp/scancode.zip https://github.com/nexB/scancode-toolkit/releases/download/v32.3.2/scancode-toolkit-32.3.2.zip &&     unzip /tmp/scancode.zip -d /opt &&     ln -s /opt/scancode-toolkit-32.3.2/scancode /usr/local/bin/scancode &&     chmod +x /usr/local/bin/scancode &&     rm -rf /tmp/scancode.zip]: exit code: 22
+ > [build 3/4] COPY ort-web-app/ .:
+------
+failed to compute cache key: "/ort-web-app" not found: not found
 mypc@Ubuntu1804:~/oss-review-fullstack$ 
