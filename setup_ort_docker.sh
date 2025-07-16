@@ -22,20 +22,31 @@ echo "✅ Tool Versions:"
 docker run --rm anchore/syft:latest version
 docker run --rm aquasec/trivy:latest version
 
+echo "---"
+echo "🧠 Detecting host architecture..."
+
 # -----------------------------
-# DETECT DOCKER ARCHITECTURE & BUILD ORT IMAGE
+# DETECT DOCKER ARCHITECTURE & BUILD IMAGE
 # -----------------------------
 
 echo "---"
 echo "🧠 Detecting Docker runtime architecture..."
+# Using alpine here just for uname -m, it's a small image.
 DOCKER_ARCH=$(docker run --rm alpine uname -m)
 
 case "$DOCKER_ARCH" in
   x86_64)
-    ORT_BINARY="ort-linux-x86_64"
+    # The ORT binary is inside a zip, and the version is hardcoded for now.
+    # We will download the zip and extract the binary.
+    ORT_VERSION="62.2.0" # Latest version as of current check
+    ORT_ARCHIVE="ort-${ORT_VERSION}.zip"
     ;;
   aarch64 | arm64)
-    ORT_BINARY="ort-linux-arm64"
+    # ORT might offer arm64 builds, but we need to verify the archive name if this path is taken.
+    # For now, focusing on x86_64 as per user's output.
+    echo "⚠️ ARM64 detected, but ORT archive name for ARM64 not verified. Using x86_64 logic for now."
+    ORT_VERSION="62.2.0" # Latest version as of current check
+    ORT_ARCHIVE="ort-${ORT_VERSION}.zip" # Assuming same archive naming convention
     ;;
   *)
     echo "❌ Unsupported Docker architecture: $DOCKER_ARCH"
@@ -43,30 +54,39 @@ case "$DOCKER_ARCH" in
     ;;
 esac
 
-echo "📦 Docker arch: $DOCKER_ARCH → Using ORT binary: $ORT_BINARY"
+echo "📦 Docker arch: $DOCKER_ARCH → Using ORT version: $ORT_VERSION from archive: $ORT_ARCHIVE"
 
-echo "---"
-echo "🐳 Building ORT Docker image..."
+# Ensure a clean rebuild by removing the existing image
+docker rmi ort-cli || true # '|| true' prevents script from exiting if image doesn't exist
 
-docker build -t ort-cli - <<EOF
-FROM eclipse-temurin:21-jdk  # Debian-based (fixes glibc issues)
+# Build ORT image (if not already)
+if [ -z "$(docker images -q ort-cli)" ]; then
+  echo "---"
+  echo "🐳 Building ORT Docker image..."
+
+  docker build -t ort-cli - <<EOF
+FROM eclipse-temurin:21-jdk
+# Changed from eclipse-temurin:21-jdk-alpine - Moved comment to its own line
 WORKDIR /workspace
 
-RUN apt-get update && apt-get install -y curl bash git && \
-    curl -fLo /usr/local/bin/ort https://github.com/oss-review-toolkit/ort/releases/latest/download/$ORT_BINARY && \
+# Install necessary packages, download, extract, and setup ORT binary
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl bash git unzip && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fLo /tmp/${ORT_ARCHIVE} https://github.com/oss-review-toolkit/ort/releases/download/${ORT_VERSION}/${ORT_ARCHIVE} && \
+    unzip /tmp/${ORT_ARCHIVE} -d /opt && \
+    ln -s /opt/ort-${ORT_VERSION}/bin/ort /usr/local/bin/ort && \
     chmod +x /usr/local/bin/ort && \
-    file /usr/local/bin/ort
+    rm -rf /tmp/${ORT_ARCHIVE}
 
 ENTRYPOINT ["ort"]
 EOF
 
-echo "✅ ORT Docker image built as 'ort-cli'"
+  echo "✅ ORT Docker image built as 'ort-cli'"
+fi
 
-# -----------------------------
-# CONFIRM ORT WORKS
-# -----------------------------
-
-docker run --rm ort-cli --version || {
+# Show ORT version to validate
+docker run --rm -v "$(pwd)":/workspace ort-cli --version || {
   echo "❌ ORT image failed to run"; exit 1;
 }
 
