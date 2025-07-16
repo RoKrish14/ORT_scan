@@ -53,7 +53,8 @@ esac
 echo "---"
 echo "🔎 Fetching latest ScanCode Toolkit version..."
 LATEST_SCANCODE_URL=$(curl -sL https://api.github.com/repos/aboutcode-org/scancode-toolkit/releases/latest \
-  | grep "browser_download_url.*linux.*\.zip" \
+  | grep "browser_download_url.*scancode-toolkit-.*\.zip" \
+  | grep -v "windows" \
   | cut -d '"' -f 4 \
   | head -n 1)
 
