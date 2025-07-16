@@ -1,7 +1,16 @@
-# .ort/config/config.yml
-severeRuleViolationThreshold: ERROR
-severeIssueThreshold: ERROR
+forceOverwrite: true
 
 licenseConfiguration:
-  # Optionally point to a license classification file
   licenseClassificationsFile: /root/.ort/config/license-classifications.yml
+
+reporter:
+  options:
+    WebApp:
+      title: "OSS Review Dashboard"
+      footer: "Generated using ORT"
+
+scanner:
+  archive:
+    fileStorage:
+      type: "FileStorage"
+      directory: "/tmp/ort-scanner-archives"
