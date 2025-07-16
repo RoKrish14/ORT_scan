@@ -1,6 +1,18 @@
 ---
-🔬 Running ORT pipeline...
-docker: Error response from daemon: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: exec: "./ort": permission denied: unknown.
-mypc@Ubuntu1804:~/oss-review-fullstack$ docker run --rm ort-cli --version
+✅ Tool Versions:
+Application:   syft
+Version:       1.28.0
+BuildDate:     2025-07-02T16:25:12Z
+GitCommit:     e8b62ab9aca2e896ab608c118619c5a7831bc737
+GitDescription: v1.28.0
+Platform:      linux/amd64
+GoVersion:     go1.24.4
+Compiler:      gc
+SchemaVersion: 16.0.34
+Version: 0.64.1
+---
+🧠 Detecting host architecture...
+📦 Will use ORT binary: ort-linux-x86_64
 exec ./ort: exec format error
+❌ ORT image failed to run
 mypc@Ubuntu1804:~/oss-review-fullstack$ 
