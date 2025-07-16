@@ -1,5 +1,4 @@
-mypc@Ubuntu1804:~/oss-review-fullstack$ ./run_stack.sh 
-🔧 Initializing ScanCode Toolkit...
-./scancode: line 139: /home/mypc/scancode-toolkit/venv/bin/scancode: No such file or directory
-❌ ScanCode setup failed.
-mypc@Ubuntu1804:~/oss-review-fullstack$
+🔬 Running ORT pipeline...
+docker: Error response from daemon: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: exec: "./ort": permission denied: unknown.
+ERRO[0000] error waiting for container: context canceled 
+mypc@Ubuntu1804:~/oss-review-fullstack$ 
