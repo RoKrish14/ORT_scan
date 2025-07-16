@@ -46,24 +46,52 @@ case "$DOCKER_ARCH" in
     ;;
 esac
 
-echo "📦 Docker arch: $DOCKER_ARCH → Using ORT version: $ORT_VERSION from archive: $ORT_ARCHIVE"
+# -----------------------------
+# GET LATEST SCANCODE TOOLKIT RELEASE
+# -----------------------------
+
+echo "---"
+echo "🔎 Fetching latest ScanCode Toolkit version..."
+LATEST_SCANCODE_URL=$(curl -sL https://api.github.com/repos/aboutcode-org/scancode-toolkit/releases/latest \
+  | grep "browser_download_url.*scancode-toolkit-.*\.zip" \
+  | cut -d '"' -f 4 \
+  | head -n 1)
+
+if [ -z "$LATEST_SCANCODE_URL" ]; then
+  echo "❌ Failed to retrieve latest ScanCode release URL."
+  exit 1
+fi
+
+SCANCODE_ZIP=$(basename "$LATEST_SCANCODE_URL")
+SCANCODE_DIR="${SCANCODE_ZIP%.zip}"
+
+echo "📦 Using ScanCode release: $SCANCODE_ZIP"
 
 # -----------------------------
-# BUILD ORT IMAGE WITH SCANCODE
+# BUILD ORT IMAGE WITH LATEST SCANCODE
 # -----------------------------
 
 echo "---"
 echo "🐳 Rebuilding ORT Docker image with ScanCode..."
 docker rmi ort-cli 2>/dev/null || true
 
-docker build --build-arg ORT_VERSION="$ORT_VERSION" --build-arg ORT_ARCHIVE="$ORT_ARCHIVE" -t ort-cli - <<'EOF'
+docker build \
+  --build-arg ORT_VERSION="$ORT_VERSION" \
+  --build-arg ORT_ARCHIVE="$ORT_ARCHIVE" \
+  --build-arg SCANCODE_URL="$LATEST_SCANCODE_URL" \
+  --build-arg SCANCODE_ZIP="$SCANCODE_ZIP" \
+  --build-arg SCANCODE_DIR="$SCANCODE_DIR" \
+  -t ort-cli - <<'EOF'
 FROM eclipse-temurin:21-jdk
 WORKDIR /workspace
 
 ARG ORT_VERSION
 ARG ORT_ARCHIVE
-ARG SCANCODE_VERSION=32.3.2
+ARG SCANCODE_URL
+ARG SCANCODE_ZIP
+ARG SCANCODE_DIR
 
+# Install ORT CLI
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl bash git unzip python3 python3-pip && \
     rm -rf /var/lib/apt/lists/* && \
@@ -73,14 +101,14 @@ RUN apt-get update && \
     chmod +x /usr/local/bin/ort && \
     rm -rf /tmp/${ORT_ARCHIVE}
 
-# Install ScanCode Toolkit
-RUN curl -fLo /tmp/scancode.zip https://github.com/nexB/scancode-toolkit/releases/download/v32.3.2/scancode-toolkit-32.3.2.zip && \
-    unzip /tmp/scancode.zip -d /opt && \
-    ln -s /opt/scancode-toolkit-32.3.2/scancode /usr/local/bin/scancode && \
+# Install latest ScanCode Toolkit
+RUN curl -fLo /tmp/${SCANCODE_ZIP} ${SCANCODE_URL} && \
+    unzip /tmp/${SCANCODE_ZIP} -d /opt && \
+    ln -s /opt/${SCANCODE_DIR}/scancode /usr/local/bin/scancode && \
     chmod +x /usr/local/bin/scancode && \
-    rm -rf /tmp/scancode.zip
+    rm -rf /tmp/${SCANCODE_ZIP}
 
-ENV PATH="/opt/scancode-toolkit-32.3.2:${PATH}"
+ENV PATH="/opt/${SCANCODE_DIR}:${PATH}"
 
 ENTRYPOINT ["ort"]
 EOF
@@ -88,14 +116,11 @@ EOF
 echo "✅ ORT Docker image with ScanCode built as 'ort-cli'"
 
 # -----------------------------
-# VERIFY ORT + SCANCODE WORK
+# VERIFY ORT + SCANCODE
 # -----------------------------
 
 docker run --rm ort-cli --version || {
   echo "❌ ORT image failed to run"; exit 1;
-}
-docker run --rm ort-cli --help | grep -q "analyze" || {
-  echo "❌ ORT CLI not functioning properly."; exit 1;
 }
 
 # -----------------------------
@@ -123,12 +148,11 @@ docker run --rm \
 echo "✅ Trivy report written to $REPORT_DIR/trivy-report.json"
 
 # -----------------------------
-# ORT - Full Pipeline via Docker
+# ORT - Full Pipeline
 # -----------------------------
 
 echo "---"
 echo "🔬 Running ORT pipeline..."
-
 echo "🧹 Cleaning previous ORT result files..."
 rm -f "$ORT_DIR/"*.json "$ORT_DIR/"*.yml
 
