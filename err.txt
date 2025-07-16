@@ -1,17 +1,9 @@
- => => extracting sha256:25ff2da83641908f65c3a74d80409d6b1b62ccfaab220b9e  0.0s
- => CANCELED [stage-1 2/4] RUN npm install -g serve                        3.3s
- => [build 2/3] WORKDIR /app                                               0.7s
- => ERROR [build 3/3] RUN npm install && npm run build                     2.3s
-------                                                                          
- > [build 3/3] RUN npm install && npm run build:                                
-#8 1.942 npm error code ENOENT                                                  
-#8 1.945 npm error syscall open
-#8 1.947 npm error path /app/package.json
-#8 1.950 npm error errno -2
-#8 1.953 npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/app/package.json'
-#8 1.955 npm error enoent This is related to npm not being able to find a file.
-#8 1.955 npm error enoent
-#8 1.966 npm error A complete log of this run can be found in: /root/.npm/_logs/2025-07-16T22_15_05_553Z-debug-0.log
-------
-executor failed running [/bin/sh -c npm install && npm run build]: exit code: 254
+🧠 Detecting Docker runtime architecture...
+---
+🔎 Fetching latest ScanCode Toolkit version...
+📦 Using ScanCode release: scancode-toolkit-v32.4.0_py3.10-windows.zip
+[+] Building 0.1s (1/2)                                                         
+ => [internal] load build definition from Dockerfile                       0.0s
+ => => transferring dockerfile: 2B                                         0.0s
+failed to solve with frontend dockerfile.v0: failed to read dockerfile: open /var/lib/docker/tmp/buildkit-mount2701902205/Dockerfile: no such file or directory
 mypc@Ubuntu1804:~/oss-review-fullstack$ 
