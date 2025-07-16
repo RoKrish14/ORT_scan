@@ -1,6 +1,11 @@
-Looking for ORT configuration in the following file:
-        /root/.ort/config/config.yml
-
-Scanning projects with:
-IllegalArgumentException: The 'scancode' command is not available in the PATH environment.
-No scanner run was created.
+ => ERROR [4/4] RUN curl -fLo /tmp/scancode.zip https://github.com/nexB/s  1.2s 
+------                                                                          
+ > [4/4] RUN curl -fLo /tmp/scancode.zip https://github.com/nexB/scancode-toolkit/releases/download/v32.3.2/scancode-toolkit-32.3.2.zip &&     unzip /tmp/scancode.zip -d /opt &&     ln -s /opt/scancode-toolkit-32.3.2/scancode /usr/local/bin/scancode &&     chmod +x /usr/local/bin/scancode &&     rm -rf /tmp/scancode.zip:                                                                              
+#7 0.618   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+#7 0.618                                  Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     9    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+#7 1.054 curl: (22) The requested URL returned error: 404
+------
+executor failed running [/bin/sh -c curl -fLo /tmp/scancode.zip https://github.com/nexB/scancode-toolkit/releases/download/v32.3.2/scancode-toolkit-32.3.2.zip &&     unzip /tmp/scancode.zip -d /opt &&     ln -s /opt/scancode-toolkit-32.3.2/scancode /usr/local/bin/scancode &&     chmod +x /usr/local/bin/scancode &&     rm -rf /tmp/scancode.zip]: exit code: 22
+mypc@Ubuntu1804:~/oss-review-fullstack$ 
