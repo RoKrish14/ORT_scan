@@ -1,0 +1,7 @@
+# .ort/config/config.yml
+severeRuleViolationThreshold: ERROR
+severeIssueThreshold: ERROR
+
+licenseConfiguration:
+  # Optionally point to a license classification file
+  licenseClassificationsFile: /root/.ort/config/license-classifications.yml
