@@ -31,7 +31,7 @@ echo "🧠 Detecting Docker runtime architecture..."
 DOCKER_ARCH=$(docker run --rm alpine uname -m)
 
 case "$DOCKER_ARCH" in
-  x86_64)
+  x86_64 | amd64)
     ORT_VERSION="62.2.0"
     ORT_ARCHIVE="ort-${ORT_VERSION}.zip"
     ;;
@@ -49,11 +49,11 @@ esac
 echo "📦 Docker arch: $DOCKER_ARCH → Using ORT version: $ORT_VERSION from archive: $ORT_ARCHIVE"
 
 # -----------------------------
-# BUILD ORT IMAGE
+# BUILD ORT IMAGE WITH SCANCODE
 # -----------------------------
 
 echo "---"
-echo "🐳 Rebuilding ORT Docker image..."
+echo "🐳 Rebuilding ORT Docker image with ScanCode..."
 docker rmi ort-cli 2>/dev/null || true
 
 docker build --build-arg ORT_VERSION="$ORT_VERSION" --build-arg ORT_ARCHIVE="$ORT_ARCHIVE" -t ort-cli - <<'EOF'
@@ -62,9 +62,10 @@ WORKDIR /workspace
 
 ARG ORT_VERSION
 ARG ORT_ARCHIVE
+ARG SCANCODE_VERSION=32.3.2
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl bash git unzip && \
+    apt-get install -y --no-install-recommends curl bash git unzip python3 python3-pip && \
     rm -rf /var/lib/apt/lists/* && \
     curl -fLo /tmp/${ORT_ARCHIVE} https://github.com/oss-review-toolkit/ort/releases/download/${ORT_VERSION}/${ORT_ARCHIVE} && \
     unzip /tmp/${ORT_ARCHIVE} -d /opt && \
@@ -72,17 +73,29 @@ RUN apt-get update && \
     chmod +x /usr/local/bin/ort && \
     rm -rf /tmp/${ORT_ARCHIVE}
 
+# Install ScanCode Toolkit
+RUN curl -fLo /tmp/scancode.zip https://github.com/nexB/scancode-toolkit/releases/download/v32.3.2/scancode-toolkit-32.3.2.zip && \
+    unzip /tmp/scancode.zip -d /opt && \
+    ln -s /opt/scancode-toolkit-32.3.2/scancode /usr/local/bin/scancode && \
+    chmod +x /usr/local/bin/scancode && \
+    rm -rf /tmp/scancode.zip
+
+ENV PATH="/opt/scancode-toolkit-32.3.2:${PATH}"
+
 ENTRYPOINT ["ort"]
 EOF
 
-echo "✅ ORT Docker image built as 'ort-cli'"
+echo "✅ ORT Docker image with ScanCode built as 'ort-cli'"
 
 # -----------------------------
-# VERIFY ORT WORKS
+# VERIFY ORT + SCANCODE WORK
 # -----------------------------
 
 docker run --rm ort-cli --version || {
   echo "❌ ORT image failed to run"; exit 1;
+}
+docker run --rm ort-cli --help | grep -q "analyze" || {
+  echo "❌ ORT CLI not functioning properly."; exit 1;
 }
 
 # -----------------------------
@@ -175,5 +188,3 @@ else
   echo "⚠️ Dashboard directory not found: $DASHBOARD_DIR"
   echo "Check if 'WebApp' format was correctly generated in the ORT report step."
 fi
-
-#check1
