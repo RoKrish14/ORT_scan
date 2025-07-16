@@ -1,12 +1,17 @@
- => CANCELED [build 1/4] FROM docker.io/library/node:18-alpine@sha256:8d6  0.1s
- => => resolve docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3  0.0s
- => => sha256:8d6421d663b4c28fd3ebc498332f249011d11894558 7.67kB / 7.67kB  0.0s
- => => sha256:929b04d7c782f04f615cf785488fed452b6569f87c7 1.72kB / 1.72kB  0.0s
- => => sha256:ee77c6cd7c1886ecc802ad6cedef3a8ec1ea27d1fb9 6.18kB / 6.18kB  0.0s
- => CACHED [build 2/4] WORKDIR /app                                        0.0s
- => ERROR [build 3/4] COPY ort-web-app/ .                                  0.0s
+ => => extracting sha256:25ff2da83641908f65c3a74d80409d6b1b62ccfaab220b9e  0.0s
+ => CANCELED [stage-1 2/4] RUN npm install -g serve                        3.3s
+ => [build 2/3] WORKDIR /app                                               0.7s
+ => ERROR [build 3/3] RUN npm install && npm run build                     2.3s
+------                                                                          
+ > [build 3/3] RUN npm install && npm run build:                                
+#8 1.942 npm error code ENOENT                                                  
+#8 1.945 npm error syscall open
+#8 1.947 npm error path /app/package.json
+#8 1.950 npm error errno -2
+#8 1.953 npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/app/package.json'
+#8 1.955 npm error enoent This is related to npm not being able to find a file.
+#8 1.955 npm error enoent
+#8 1.966 npm error A complete log of this run can be found in: /root/.npm/_logs/2025-07-16T22_15_05_553Z-debug-0.log
 ------
- > [build 3/4] COPY ort-web-app/ .:
-------
-failed to compute cache key: "/ort-web-app" not found: not found
+executor failed running [/bin/sh -c npm install && npm run build]: exit code: 254
 mypc@Ubuntu1804:~/oss-review-fullstack$ 
