@@ -1,55 +1,20 @@
-Here are design review checklists with a security focus for SWE1, SWE2, SWE3, SWE5, and SWE6, following the same format as the SWE4 Cryptography list.
+SWE3 Output Encoding & Escaping: Design Review Questions
+Is all output that includes user-controlled data encoded or escaped according to the context in which it's displayed (e.g., HTML, JavaScript, URL, CSS, XML)?
 
-SWE1 Architecture & Design: Design Review Questions
-Has a threat model been developed for the system/component?
+Are context-aware encoding functions used to prevent Cross-Site Scripting (XSS) and other injection attacks?
 
-Are security requirements clearly defined and traceable to architectural components?
+Is automatic escaping enabled and correctly configured in templating engines?
 
-Is the system designed with the principle of least privilege in mind for all components and users?
+Are instances of raw HTML/JavaScript injection (e.g., "innerHTML" or "eval" equivalents) reviewed and justified?
 
-Are security boundaries clearly defined and enforced between different trust levels?
+Is user-supplied content sanitized before being displayed, even after encoding, to mitigate potential complex attacks?
 
-Has defense-in-depth been applied, with multiple layers of security controls?
+Are HTTP headers that contain user-supplied data properly encoded to prevent header injection?
 
-Are there single points of failure from a security perspective? If so, are mitigations in place?
+Is there protection against cross-site request forgery (CSRF) tokens or mechanisms on state-changing requests?
 
-How are sensitive data flows identified, protected, and controlled throughout the system?
+Are clickjacking mitigations in place (e.g., X-Frame-Options, Content Security Policy frame-ancestors)?
 
-Is there a clear understanding of data residency and sovereignty requirements?
+Is Content Security Policy (CSP) implemented to mitigate XSS and other content injection attacks?
 
-Are external interfaces and dependencies clearly identified and their security implications assessed?
-
-Is there a strategy for secure configuration management of the system and its components?
-
-Are error handling mechanisms designed to prevent information leakage?
-
-Has the system been designed to facilitate security monitoring and logging?
-
-Is there a plan for incident response in the event of a security breach?
-
-Are rollback mechanisms in place for secure updates and configuration changes?
-
-SWE2 Input Validation & Sanitization: Design Review Questions
-Is all external input (user input, API calls, file uploads, network packets) validated?
-
-Is validation performed as close to the input source as possible?
-
-Are allow-lists (whitelists) preferred over deny-lists (blacklists) for input validation?
-
-Are data types, lengths, formats, and ranges rigorously checked for all inputs?
-
-Is canonicalization performed before validation to prevent bypasses?
-
-Are encoding issues handled to prevent injection attacks (e.g., UTF-8, URL encoding)?
-
-Are special characters escaped or removed when input is used in different contexts (e.g., SQL queries, HTML output, shell commands)?
-
-Is input that fails validation rejected gracefully and securely without revealing sensitive information?
-
-Are file uploads subjected to strict validation (e.g., content type, magic bytes, allowed extensions, size limits)?
-
-Is there protection against mass assignment vulnerabilities in frameworks?
-
-Are regular expressions used safely and efficiently for validation, avoiding ReDoS attacks?
-
-Are client-side validations always duplicated and enforced on the server-side?
+Are cookies secured with HttpOnly, Secure, SameSite attributes where appropriate?
