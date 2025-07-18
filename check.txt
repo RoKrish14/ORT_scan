@@ -1,3 +1,5 @@
+Here are design review checklists with a security focus for SWE1, SWE2, SWE3, SWE5, and SWE6, following the same format as the SWE4 Cryptography list.
+
 SWE1 Architecture & Design: Design Review Questions
 Has a threat model been developed for the system/component?
 
@@ -26,3 +28,28 @@ Has the system been designed to facilitate security monitoring and logging?
 Is there a plan for incident response in the event of a security breach?
 
 Are rollback mechanisms in place for secure updates and configuration changes?
+
+SWE2 Input Validation & Sanitization: Design Review Questions
+Is all external input (user input, API calls, file uploads, network packets) validated?
+
+Is validation performed as close to the input source as possible?
+
+Are allow-lists (whitelists) preferred over deny-lists (blacklists) for input validation?
+
+Are data types, lengths, formats, and ranges rigorously checked for all inputs?
+
+Is canonicalization performed before validation to prevent bypasses?
+
+Are encoding issues handled to prevent injection attacks (e.g., UTF-8, URL encoding)?
+
+Are special characters escaped or removed when input is used in different contexts (e.g., SQL queries, HTML output, shell commands)?
+
+Is input that fails validation rejected gracefully and securely without revealing sensitive information?
+
+Are file uploads subjected to strict validation (e.g., content type, magic bytes, allowed extensions, size limits)?
+
+Is there protection against mass assignment vulnerabilities in frameworks?
+
+Are regular expressions used safely and efficiently for validation, avoiding ReDoS attacks?
+
+Are client-side validations always duplicated and enforced on the server-side?
