@@ -1,0 +1,23 @@
+SWE Process,Enhanced Security Questionnaire
+SWE.1,"Are all externally-received inputs that could be interpreted as code or commands explicitly sanitized to prevent code injection (e.g., SQL injection, command injection, 'bobby tables' risks)?"
+SWE.1,"Are security requirements derived from threat modeling (e.g., TARA) clearly defined and traceable at the software level?"
+SWE.1,Are requirements in place to enforce use of TLS for all HTTP-based communications?
+SWE.2,Are state variables used for security-critical decisions designed with a high Hamming distance between valid states to prevent glitch attacks?
+SWE.2,Do all invalid values of security-critical flags or state variables lead to system failure or fallback to safe state?
+SWE.2,"Is the system architecture designed to recalculate access permissions dynamically, rather than relying solely on persistent flags, to prevent inconsistency due to glitch attacks?"
+SWE.2,Are cryptographic secrets and sensitive runtime values protected using CRCs or hash-based validation to detect manipulation?
+SWE.3,Is a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG) used for all security-sensitive random number generation tasks?
+SWE.3,Are the error conditions from random number generation functions handled securely and appropriately?
+SWE.3,"Are seeds for random number generators derived from sources with sufficient entropy and not from static or predictable inputs (e.g., timers, serial numbers)?"
+SWE.3,Are initialization vectors (IVs) for cryptographic operations generated and reviewed to ensure compliance with algorithmic randomness requirements?
+SWE.4,Are constant-time comparison functions used for cryptographic operations to mitigate timing-based side-channel attacks?
+SWE.4,"Are memory areas (stack, heap) containing cryptographic secrets wiped securely when no longer in use, using non-optimizable memory cleaning functions?"
+SWE.4,Are such memory cleanup routines invoked before software/system resets to avoid post-reset exposure of sensitive data?
+SWE.5,Are integration-level tests designed to verify that timers used to limit brute-force attempts cannot be bypassed by resets or session changes?
+SWE.5,"Are all cryptographic primitives verified to use appropriate parameters (e.g., RSA exponent 65537)?"
+SWE.5,"Are cryptographic libraries validated as standard-compliant (e.g., using trusted third-party implementations rather than custom code)?"
+SWE.5,"Is the cryptographic logic (e.g., certificate parsers) updateable in the field to address future vulnerabilities?"
+SWE.6,Are tests conducted to confirm that cryptographic secrets are not hard-coded or stored insecurely in source or binary?
+SWE.6,Were the entropy sources for cryptographic seeds evaluated to confirm conformance with AIS-20 or NIST SP800-90A?
+SWE.6,"Do test results confirm that random number generators block until sufficient entropy is available, or are fallback mechanisms documented and safe?"
+SWE.6,"Are sanity checks in place to reject low-entropy or predictable random outputs (e.g., all-zero seeds, reused random numbers)?"
