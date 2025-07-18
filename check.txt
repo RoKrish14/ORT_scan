@@ -1,0 +1,35 @@
+If the product constructs an executable command or code from inputs received from external sources: is the input being sanitized before to ensure that the intended command cannot be modified (example: SQL injection, data as part of a string which is executed as a command by the application, “code injection”, “bobby tables”, “executable data”)? 
+If HTTP is used, is the product using transport layer security (TLS)? 
+"If state variables/flags are used to control access to critical assets (prevention of glitch attacks): 
+o   do they have a high hamming distance between their states?
+o   do all invalid values lead to failures?"
+Is the state of access permissions recalculated frequently instead of just checking a flag at each iteration, potentially using consistency checks between flags and states? (prevention of glitch attacks) 
+Are sensitive data, states, and flags protected with check values (CRC/hash) to make it harder to manipulate them consistently? 
+Is a cryptographically strong pseudo random number generator (CSPRNG) used for all random values relating to security operations? 
+Whenever a random number is generated, are error messages of the function generating the random number evaluated and appropriate handled? 
+"When a seed is used to initialize random number generators, has the seed sufficient entropy? 
+
+Note: static information and timer values and single readings of ADCs provide insufficient entropy. See e.g. UDS Security Access for Constrained ECUs (https://www.sae.org/publications/technical-papers/content/2022-01-0132/)
+"
+Has the generation of initialization vectors for crypto algorithms (e.g. CBC mode in AES) been reviewed to ensure it meets the requirements of the cryptographic primitives (e.g., but not limited to, randomness)?  
+If symmetric keys are used (passwords etc.), are constant-time comparison functions from a well-validated crypto library used for the checks? 
+If timers are used to prevent brute-force attacks (e.g. denying access requests for a certain time after an unsuccessful request), is it ensured that the timers cannot be reset easily (e.g. by resetting the ECU, cycling the power, changing UDS session)? 
+"If cryptographic secrets (keys, passwords, …) or other sensitive information are stored in RAM (including stack, heap) temporarily in plain text, is the RAM area cleaned once the RAM copy is not needed anymore? 
+Are cleaning functions used that cannot be optimized by the compiler or linker? 
+Are these cleaning functions executed before the system reset (especially in case of soft-resets) to avoid exposing the sensitive information in potentially lower privilege levels after reset? "
+In case RSA is used, are low or otherwise inappropriate exponents avoided? It is recommended to use 65537 (0x10001) as RSA public exponent 
+Is state-of-the-art cryptography used? 
+Are cryptographic assets stored with sufficient security in all locations and are not hard-coded? 
+"Have the cryptographic assets (keys, seeds, …) been generated using a state-of-the-art entropy source (preferably a True Random Number Generator) and not from known or easy-to-guess information (e.g. serial numbers, VIN, user provided passwords, …? 
+Note: Cryphographically Strong Pseudo Random Generators should be compliant with AIS-20 or NIST SP800-90A) "
+ Is the scope of access provided with cryptographic assets (e.g. passwords, tokens, certificates) is reasonably limited? 
+If (pseudo) random numbers or seeds are generated, are they cryptographically strong? I.e. are they compliant with AIS-20 or NIST SP800-90A? 
+Has the use of random number generators which block until sufficient entropy is reached been considered (e.g. utilize /dev/random instead of /dev/urandom) 
+Are sanity checks performed for generated random numbers (e.g. rejection of ‘all zeros’ or ‘all ones’ or ‘same number as the last time’)? 
+Is there test evidence that the entropy of the random number generator and of seeds is sufficiently high? Is the entropy not based on easy-to-guess information (e.g. serial numbers, VIN, user provided passwords, …)? 
+"Are constant-time comparison functions used to avoid information leaking through timing? 
+Note: e.g. memcmp is usually not constant time but uses a byte-by-byte test with early break. "
+Are constant-time functions (in software or hardware) used to perform arithmetic information to prevent information leaking through timing? 
+Are complex parts of the crypto code (e.g. certificate parsers) updatable in the field? 
+" Is the cryptography using standard, proven implementation? 
+Note: it is highly recommended to use crypto libraries from trusted, specialized vendors instead of proprietary implementations. "
