@@ -1,3 +1,2 @@
-Exception in thread "main" com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field "version_control_systems" (class org.ossreviewtoolkit.model.config.RepositoryConfiguration), not marked as ignorable (8 known properties: "snippet_choices", "license_choices", "analyzer", "resolutions", "excludes", "includes", "curations", "package_configurations"])
- at [Source: (File); line: 132, column: 1] (through reference chain: org.ossreviewtoolkit.model.config.RepositoryConfiguration["version_control_systems"])
-	at com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.from(UnrecognizedPropertyException.java:61)
+Unable to find image 'ghcr.io/oss-review-toolkit/ort:67.0.0' locally
+docker: Error response from daemon: manifest unknown
