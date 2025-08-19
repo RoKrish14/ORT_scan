@@ -1,204 +1,210 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # -----------------------------
-# CONFIGURATION
+# Configuration
 # -----------------------------
-
-PROJECT_DIR="./emoji-java"
-REPORT_DIR="./reports"
-ORT_DIR="./ort-results"
-ORT_GLOBAL_CONFIG_DIR="./.ort/config"
-REPOSITORY_CONFIG_FILE="repository.yml"
-
-mkdir -p "$REPORT_DIR" "$ORT_DIR"
-
-# -----------------------------
-# TOOL VERSION CHECKS (Docker)
-# -----------------------------
-
-echo "---"
-echo "✅ Tool Versions:"
-docker run --rm anchore/syft:latest version
-docker run --rm aquasec/trivy:latest version
+PROJECT_DIR="$HOME/project"
+CONFIG_DIR="$HOME/FOSShub/ort-config"
+OUTPUT_DIR="$HOME/project/ort-output-$(date +%Y%m%d-%H%M%S)"
+ORT_IMAGE="ghcr.io/oss-review-toolkit/ort:latest"
+CERT_FILE_HOST_PATH="$HOME/certificate.pem"
+CERT_FILE_DOCKER_PATH="/tmp/certificate.pem"
+TRUST_STORE_PASSWORD="changeit"
+BRANCH="main"
+export JAVA_HOME="/opt/java/openjdk"
 
 # -----------------------------
-# DETECT DOCKER ARCHITECTURE
+# Dependency-Track Configuration
 # -----------------------------
+export DTRACK_URL="${DTRACK_URL:-http://localhost:8081}"
+export DTRACK_PROJECT="${DTRACK_PROJECT:-MySBOMProject}"
 
-echo "---"
-echo "🧠 Detecting Docker runtime architecture..."
-DOCKER_ARCH=$(docker run --rm alpine uname -m)
-
-case "$DOCKER_ARCH" in
-  x86_64 | amd64)
-    ORT_VERSION="62.2.0"
-    ORT_ARCHIVE="ort-${ORT_VERSION}.zip"
-    ;;
-  aarch64 | arm64)
-    echo "⚠️ ARM64 detected. Assuming archive name is same."
-    ORT_VERSION="62.2.0"
-    ORT_ARCHIVE="ort-${ORT_VERSION}.zip"
-    ;;
-  *)
-    echo "❌ Unsupported Docker architecture: $DOCKER_ARCH"
-    exit 1
-    ;;
-esac
+echo "🔍 Project directory: $PROJECT_DIR"
+echo "📁 Output directory: $OUTPUT_DIR"
+echo "🛡️  Dependency-Track URL: $DTRACK_URL"
+echo "📦 Dependency-Track project: $DTRACK_PROJECT"
 
 # -----------------------------
-# GET LINUX SCANCODE TOOLKIT
+# Certificate check
 # -----------------------------
-
-echo "---"
-echo "🔎 Fetching latest ScanCode Toolkit version..."
-LATEST_SCANCODE_URL=$(curl -sL https://api.github.com/repos/aboutcode-org/scancode-toolkit/releases/latest \
-  | grep "browser_download_url.*scancode-toolkit-.*\.zip" \
-  | grep -v "windows" \
-  | cut -d '"' -f 4 \
-  | head -n 1)
-
-if [ -z "$LATEST_SCANCODE_URL" ]; then
-  echo "❌ Failed to get latest ScanCode Toolkit URL."
+if [ ! -f "$CERT_FILE_HOST_PATH" ]; then
+  echo "❌ Certificate file not found at $CERT_FILE_HOST_PATH"
   exit 1
 fi
 
-SCANCODE_ZIP=$(basename "$LATEST_SCANCODE_URL")
-SCANCODE_DIR="${SCANCODE_ZIP%.zip}"
-
-echo "📦 Using ScanCode release: $SCANCODE_ZIP"
-
 # -----------------------------
-# BUILD ORT IMAGE W/ SCANCODE
+# Ensure .ort.yml exists
 # -----------------------------
-
-echo "---"
-echo "🐳 Rebuilding ORT Docker image with ScanCode..."
-docker rmi ort-cli 2>/dev/null || true
-
-docker build -f - . -t ort-cli --build-arg ORT_VERSION="$ORT_VERSION" --build-arg ORT_ARCHIVE="$ORT_ARCHIVE" --build-arg SCANCODE_URL="$LATEST_SCANCODE_URL" --build-arg SCANCODE_ZIP="$SCANCODE_ZIP" --build-arg SCANCODE_DIR="$SCANCODE_DIR" <<'EOF'
-FROM eclipse-temurin:21-jdk
-WORKDIR /workspace
-
-ARG ORT_VERSION
-ARG ORT_ARCHIVE
-ARG SCANCODE_URL
-ARG SCANCODE_ZIP
-ARG SCANCODE_DIR
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl bash git unzip python3 python3-pip && \
-    rm -rf /var/lib/apt/lists/* && \
-    curl -fLo /tmp/${ORT_ARCHIVE} https://github.com/oss-review-toolkit/ort/releases/download/${ORT_VERSION}/${ORT_ARCHIVE} && \
-    unzip /tmp/${ORT_ARCHIVE} -d /opt && \
-    ln -s /opt/ort-${ORT_VERSION}/bin/ort /usr/local/bin/ort && \
-    chmod +x /usr/local/bin/ort && \
-    curl -fLo /tmp/${SCANCODE_ZIP} ${SCANCODE_URL} && \
-    unzip /tmp/${SCANCODE_ZIP} -d /opt && \
-    ln -s /opt/${SCANCODE_DIR}/scancode /usr/local/bin/scancode && \
-    chmod +x /usr/local/bin/scancode && \
-    rm -rf /tmp/${SCANCODE_ZIP} /tmp/${ORT_ARCHIVE}
-
-ENV PATH="/opt/${SCANCODE_DIR}:${PATH}"
-
-ENTRYPOINT ["ort"]
-EOF
-
-echo "✅ ORT Docker image with ScanCode built as 'ort-cli'"
-
-# -----------------------------
-# VERIFY ORT
-# -----------------------------
-
-docker run --rm ort-cli --version || {
-  echo "❌ ORT image failed to run"; exit 1;
-}
-
-# -----------------------------
-# SYFT - Generate SBOM
-# -----------------------------
-
-echo "---"
-echo "📦 Generating SBOM with Syft..."
-docker run --rm \
-  -v "$(pwd)/$PROJECT_DIR":/project \
-  -v "$(pwd)/$REPORT_DIR":/output \
-  anchore/syft:latest dir:/project -o spdx-json > "$REPORT_DIR/sbom.spdx.json"
-echo "✅ SBOM written to $REPORT_DIR/sbom.spdx.json"
-
-# -----------------------------
-# TRIVY - Vulnerability Scan
-# -----------------------------
-
-echo "---"
-echo "🛡️ Running Trivy scan..."
-docker run --rm \
-  -v "$(pwd)/$PROJECT_DIR":/project \
-  -v "$(pwd)/$REPORT_DIR":/output \
-  aquasec/trivy:latest fs /project --format json --output /output/trivy-report.json
-echo "✅ Trivy report written to $REPORT_DIR/trivy-report.json"
-
-# -----------------------------
-# ORT - Full Pipeline
-# -----------------------------
-
-echo "---"
-echo "🔬 Running ORT pipeline..."
-rm -f "$ORT_DIR/"*.json "$ORT_DIR/"*.yml
-
-MOUNT_CONFIG="-v $(pwd)/$ORT_GLOBAL_CONFIG_DIR:/root/.ort/config"
-
-docker run --rm \
-  -v "$(pwd):/workspace" \
-  $MOUNT_CONFIG \
-  -w /workspace \
-  ort-cli analyze \
-    -i "$PROJECT_DIR" \
-    -o "$ORT_DIR" \
-    -f JSON \
-    --repository-configuration-file "$REPOSITORY_CONFIG_FILE"
-
-docker run --rm \
-  -v "$(pwd):/workspace" \
-  $MOUNT_CONFIG \
-  -w /workspace \
-  ort-cli scan \
-    -i "$ORT_DIR/analyzer-result.json" \
-    -o "$ORT_DIR" \
-    --skip-excluded
-
-docker run --rm \
-  -v "$(pwd):/workspace" \
-  $MOUNT_CONFIG \
-  -w /workspace \
-  ort-cli evaluate \
-    -i "$ORT_DIR/evaluator-input.yml" \
-    -o "$ORT_DIR" \
-    --rules "/root/.ort/config/rules.kts" \
-    --severity-threshold "ERROR"
-
-docker run --rm \
-  -v "$(pwd):/workspace" \
-  $MOUNT_CONFIG \
-  -w /workspace \
-  ort-cli report \
-    -i "$ORT_DIR/evaluator-result.yml" \
-    -o "$REPORT_DIR" \
-    -f WebApp,StaticHtml,SpdxDocument
-
-echo "✅ ORT reports generated in $REPORT_DIR"
-
-# -----------------------------
-# DASHBOARD (WebApp viewer)
-# -----------------------------
-
-DASHBOARD_DIR="$REPORT_DIR/ort-web-app"
-if [ -d "$DASHBOARD_DIR" ]; then
-  echo "---"
-  echo "📊 Starting ORT Dashboard at http://localhost:8000 ..."
-  cd "$DASHBOARD_DIR"
-  python3 -m http.server 8000
-else
-  echo "⚠️ Dashboard directory not found: $DASHBOARD_DIR"
-  echo "Check if 'WebApp' format was correctly generated in the ORT report step."
+if [ ! -f "$PROJECT_DIR/.ort.yml" ]; then
+  echo "❌ No .ort.yml found in $PROJECT_DIR. This file is required for VCS info."
+  exit 1
 fi
+
+# -----------------------------
+# Create output directories
+# -----------------------------
+mkdir -p "$OUTPUT_DIR"/{analyzer-result,scanner-result,advisor-result,evaluator-result,report-result,syft-result,trivy-result}
+
+# -----------------------------
+# ORT Analyze
+# -----------------------------
+echo "===> Running ORT analyze..."
+docker run --rm \
+  -v "$PROJECT_DIR":/project \
+  -v "$CONFIG_DIR":/home/ort/.ort/config \
+  -v "$CERT_FILE_HOST_PATH":"$CERT_FILE_DOCKER_PATH" \
+  -v "$OUTPUT_DIR":/ort/data \
+  -e "JAVA_HOME=$JAVA_HOME" \
+  --entrypoint /bin/sh \
+  "$ORT_IMAGE" -c "
+    cp \"\$JAVA_HOME/lib/security/cacerts\" /ort/data/custom-cacerts.jks && \
+    keytool -import -trustcacerts -keystore /ort/data/custom-cacerts.jks \
+      -storepass \"$TRUST_STORE_PASSWORD\" -alias example_cert \
+      -file \"$CERT_FILE_DOCKER_PATH\" -noprompt && \
+    export JAVA_TOOL_OPTIONS=\"-Djavax.net.ssl.trustStore=/ort/data/custom-cacerts.jks \
+    -Djavax.net.ssl.trustStorePassword=$TRUST_STORE_PASSWORD\" && \
+    ort analyze -i /project -o /ort/data/analyzer-result \
+      --repository-configuration-file /project/.ort.yml
+  "
+
+ANALYZE_RESULT="$OUTPUT_DIR/analyzer-result/analyzer-result.yml"
+[ -s "$ANALYZE_RESULT" ] && echo "✅ Analyzer result exists: $ANALYZE_RESULT" || { echo "❌ Analyzer result missing or empty."; exit 1; }
+
+# -----------------------------
+# ORT Scan
+# -----------------------------
+echo "===> Running ORT scan..."
+docker run --rm \
+  -v "$PROJECT_DIR":/project \
+  -v "$OUTPUT_DIR":/ort/data \
+  -v "$CONFIG_DIR":/home/ort/.ort/config \
+  "$ORT_IMAGE" scan \
+  --ort-file "/ort/data/analyzer-result/$(basename "$ANALYZE_RESULT")" \
+  -o /ort/data/scanner-result
+
+SCAN_RESULT="$OUTPUT_DIR/scanner-result/scan-result.yml"
+[ -s "$SCAN_RESULT" ] && echo "✅ Scan result exists: $SCAN_RESULT" || { echo "❌ Scan result missing or empty."; exit 1; }
+
+# -----------------------------
+# Syft SBOM generation
+# -----------------------------
+SYFT_OUTPUT_DIR="$OUTPUT_DIR/syft-result"
+mkdir -p "$SYFT_OUTPUT_DIR"
+
+echo "===> Running Syft SPDX SBOM..."
+docker run --rm \
+  -e SYFT_CHECK_FOR_UPDATES=false \
+  -v "$PROJECT_DIR":/project:ro \
+  -v "$SYFT_OUTPUT_DIR":/output \
+  -v "$CERT_FILE_HOST_PATH":/tmp/certificate.pem \
+  -e SSL_CERT_FILE=/tmp/certificate.pem \
+  ghcr.io/anchore/syft:latest \
+  /project -o spdx-json=/output/sbom-spdx.json
+
+echo "===> Running Syft CycloneDX SBOM..."
+docker run --rm \
+  -e SYFT_CHECK_FOR_UPDATES=false \
+  -v "$PROJECT_DIR":/project:ro \
+  -v "$SYFT_OUTPUT_DIR":/output \
+  -v "$CERT_FILE_HOST_PATH":/tmp/certificate.pem \
+  -e SSL_CERT_FILE=/tmp/certificate.pem \
+  ghcr.io/anchore/syft:latest \
+  /project -o cyclonedx-json=/output/sbom-cdx.json
+
+SYFT_SPX="$SYFT_OUTPUT_DIR/sbom-spdx.json"
+SYFT_CDX="$SYFT_OUTPUT_DIR/sbom-cdx.json"
+
+# -----------------------------
+# Trivy Scan
+# -----------------------------
+TRIVY_OUTPUT_DIR="$OUTPUT_DIR/trivy-result"
+mkdir -p "$TRIVY_OUTPUT_DIR"
+
+echo "===> Running Trivy SPDX SBOM..."
+docker run --rm \
+  -v "$PROJECT_DIR":/project:ro \
+  -v "$TRIVY_OUTPUT_DIR":/trivy \
+  aquasec/trivy:latest fs /project \
+  --format spdx-json \
+  > "$TRIVY_OUTPUT_DIR/trivy-spdx.json"
+
+echo "===> Running Trivy CycloneDX SBOM..."
+docker run --rm \
+  -v "$PROJECT_DIR":/project:ro \
+  -v "$TRIVY_OUTPUT_DIR":/trivy \
+  aquasec/trivy:latest fs /project \
+  --format cyclonedx \
+  > "$TRIVY_OUTPUT_DIR/trivy-cdx.json"
+
+TRIVY_RESULT="$TRIVY_OUTPUT_DIR/trivy-spdx.json"
+TRIVY_CDX="$TRIVY_OUTPUT_DIR/trivy-cdx.json"
+
+# -----------------------------
+# ORT Advise
+# -----------------------------
+echo "===> Running ORT advise..."
+docker run --rm \
+  -v "$PROJECT_DIR":/project \
+  -v "$OUTPUT_DIR":/ort/data \
+  -v "$CONFIG_DIR":/home/ort/.ort/config \
+  "$ORT_IMAGE" advise \
+  --advisors="OSV,OSSIndex,VulnerableCode" \
+  --ort-file "/ort/data/scanner-result/$(basename "$SCAN_RESULT")" \
+  -o /ort/data/advisor-result
+
+ADVISE_RESULT="$OUTPUT_DIR/advisor-result/advisor-result.yml"
+
+# -----------------------------
+# ORT Evaluate
+# -----------------------------
+echo "===> Running ORT evaluate..."
+docker run --rm \
+  -v "$PROJECT_DIR":/project:ro \
+  -v "$OUTPUT_DIR":/ort/data \
+  -v "$CONFIG_DIR":/home/ort/.ort/config \
+  "$ORT_IMAGE" evaluate \
+  --ort-file "/ort/data/advisor-result/$(basename "$ADVISE_RESULT")" \
+  -r /home/ort/.ort/config/rules.kts \
+  -o /ort/data/evaluator-result 
+
+EVAL_RESULT="$OUTPUT_DIR/evaluator-result/evaluation-result.yml"
+
+# -----------------------------
+# ORT Report
+# -----------------------------
+echo "===> Running ORT reporter..."
+docker run --rm \
+  -v "$PROJECT_DIR":/project:ro \
+  -v "$OUTPUT_DIR":/ort/data \
+  -v "$CONFIG_DIR":/home/ort/.ort/config \
+  "$ORT_IMAGE" report \
+  --ort-file /ort/data/evaluator-result/$(basename "$EVAL_RESULT") \
+  -o /ort/data/report-result \
+  --report-formats "CycloneDX,HtmlTemplate,WebApp,PdfTemplate"
+
+ORT_CDX="$OUTPUT_DIR/report-result/scan-report.cyclonedx.json"
+
+# -----------------------------
+# Dependency-Track Upload
+# -----------------------------
+if [[ -n "$DTRACK_URL" && -n "$DTRACK_API_KEY" && -n "$DTRACK_PROJECT" ]]; then
+  echo "===> Uploading SBOMs to Dependency-Track at $DTRACK_URL"
+  for sbom in "$ORT_CDX" "$SYFT_CDX" "$TRIVY_CDX"; do
+    if [ -s "$sbom" ]; then
+      echo "📤 Uploading $(basename "$sbom")..."
+      curl -s -X POST "$DTRACK_URL/api/v1/bom" \
+        -H "X-Api-Key: $DTRACK_API_KEY" \
+        -H "Content-Type: multipart/form-data" \
+        -F "projectName=$DTRACK_PROJECT" \
+        -F "projectVersion=1.0.0" \
+        -F "autoCreate=true" \
+        -F "bom=@$sbom" \
+        && echo "✅ Uploaded: $sbom"
+    fi
+  done
+else
+  echo "⚠️  Dependency-Track upload skipped (missing URL/API key/project)"
+fi
+
+echo "🎉 ORT pipeline completed. All outputs are in $OUTPUT_DIR"
