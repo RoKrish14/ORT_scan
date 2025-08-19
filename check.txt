@@ -1,3 +1,9 @@
+version_control_systems:
+  - type: Git
+    url: https://git.your-company.de/your-project/your-repo.git
+    revision: main
+    path: ""
+
 analyzer:
   enabled_package_managers:
     - Gradle
