@@ -1,20 +1,27 @@
 ort:
-  forceOverwrite: true
+  configuration:
+    licenseFilePatterns:
+      - "LICENSE"
+      - "LICENSE.txt"
+      - "COPYING"
+    copyrightFilePatterns:
+      - "NOTICE"
+      - "NOTICE.txt"
+    excludedLicenseFilePatterns:
+      - "docs/licenses/**"
+      - "**/third_party/**"
 
-  licenseConfiguration:
-    licenseClassificationsFile: /root/.ort/config/license-classifications.yml
+analyzer:
+  allowDynamicVersions: true     # ✅ lets ORT proceed without lockfiles
+  downloadSources: false
+  enabledPackageManagers:        # camelCase (expected by ORT config schema)
+    - "Gradle"
+    - "Maven"
+    - "NPM"
+    - "Bundler"
+    - "Pip"
 
-  scanner:
-    archive:
-      fileStorage:
-        type: FileStorage
-        directory: /tmp/ort-scanner-archives
-
-  reporter:
-    options:
-      WebApp:
-        title: "OSS Review Dashboard"
-        footer: "Generated using ORT"
-      NoticeReporter:
-        copyrightGarbage:
-          - "Copyright (c) 2023 Acme"
+downloader:
+  allowMovingRevisions: true     # ✅ helps when VCS revisions move
+  skip:                          # ✅ skip downloading source if you don’t need it
+    - "**"
