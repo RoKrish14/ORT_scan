@@ -1,2 +1,12 @@
-Unable to find image 'ghcr.io/oss-review-toolkit/ort:67.0.0' locally
-docker: Error response from daemon: manifest unknown
+Environment variables:                                                        
+HOME = /home/ort                                                              
+JAVA_HOME = /opt/java/openjdk                                                 
+ANDROID_HOME = /opt/android-sdk                                               
+                                                                              
+Looking for ORT configuration in the following file:
+        /home/ort/.ort/config/config.yml
+
+Scanning projects with:
+        ScanCode (version 32.4.1)
+Scanning packages with:
+        ScanCode (version 32.4.1)
