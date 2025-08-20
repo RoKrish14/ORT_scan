@@ -1,28 +1,25 @@
 ort:
-  configuration:
-    licenseFilePatterns:
-      - "LICENSE"
-      - "LICENSE.txt"
-      - "COPYING"
-    copyrightFilePatterns:
-      - "NOTICE"
-      - "NOTICE.txt"
-    excludedLicenseFilePatterns:
-      - "docs/licenses/**"
-      - "**/third_party/**"
+  scanner:
+    skipExcluded: true
+    packageTypes: ["PROJECT"]
+    sourceCodeOrigins: ["VCS"]
+    scanners:
+      ScanCode:
+        options:
+          commandLine:
+            ["--copyright","--license","--info","--strip-root","--timeout","300"]
+          commandLineNonConfig: ["--processes","2"]
+
 analyzer:
   allowDynamicVersions: false
   downloadSources: false
   enabled_package_managers:
-    - "Gradle"
-    - "Maven"
-    - "NPM"
-    - "Bundler"
-    - "Pip"
-    
+    - Gradle
+    - Maven
+    - NPM
+    - Bundler
+    - Pip
+
 downloader:
   skip:
     - "**"
-
-
-
