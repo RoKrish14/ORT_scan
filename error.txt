@@ -1,10 +1,28 @@
-docker run --rm \
-  -v "$PROJECT_DIR":/project \
-  -v "$OUTPUT_DIR":/ort/data \
-  -v "$CONFIG_DIR":/home/ort/.ort/config \
-  "$ORT_IMAGE" scan \
-  --ort-file "/ort/data/analyzer-result/$(basename "$ANALYZE_RESULT")" \
-  --package-types PROJECT \
-  --source-code-origins VCS \
-  --skip-excluded \
-  -o /ort/data/scanner-result
+ort:
+  configuration:
+    licenseFilePatterns:
+      - "LICENSE"
+      - "LICENSE.txt"
+      - "COPYING"
+    copyrightFilePatterns:
+      - "NOTICE"
+      - "NOTICE.txt"
+    excludedLicenseFilePatterns:
+      - "docs/licenses/**"
+      - "**/third_party/**"
+analyzer:
+  allowDynamicVersions: false
+  downloadSources: false
+  enabled_package_managers:
+    - "Gradle"
+    - "Maven"
+    - "NPM"
+    - "Bundler"
+    - "Pip"
+    
+downloader:
+  skip:
+    - "**"
+
+
+
