@@ -1,14 +1,17 @@
+
 ort:
   scanner:
     skipExcluded: true
-    packageTypes: ["PROJECT"]
-    sourceCodeOrigins: ["VCS"]
+    packageTypes: ["PROJECT"]          # ok as a list
+    sourceCodeOrigins: ["VCS"]         # ok as a list
     scanners:
       ScanCode:
         options:
-          commandLine:
-            ["--copyright","--license","--info","--strip-root","--timeout","300"]
-          commandLineNonConfig: ["--processes","2"]
+          # These MUST be strings, not lists:
+          commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
+          commandLineNonConfig: "--processes,2"
+          # Optional, but often helpful:
+          # preferFileLicense: true
 
 analyzer:
   allowDynamicVersions: false
