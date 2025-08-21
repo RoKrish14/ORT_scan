@@ -1,20 +1,4 @@
-19:03:51.394 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - No value passed for parameter 'licenseView'. (script.rules.kts:58:21)
-19:03:51.396 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - No value passed for parameter 'licenseView'. (script.rules.kts:83:21)
-19:03:51.396 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - No value passed for parameter 'licenseView'. (script.rules.kts:98:21)
-Exception in thread "main" java.lang.RuntimeException: Using JDK home inferred from java.home: /opt/java/openjdk
-Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
-Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
-No value passed for parameter 'licenseView'.
-No value passed for parameter 'licenseView'.
-No value passed for parameter 'licenseView'.
-	at kotlin.script.experimental.api.ErrorHandlingKt.valueOrThrow(errorHandling.kt:305)
-	at org.ossreviewtoolkit.utils.scripting.ScriptRunner.runScript(ScriptRunner.kt:72)
-	at org.ossreviewtoolkit.evaluator.Evaluator.run(Evaluator.kt:56)
-	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand.run(EvaluateCommand.kt:335)
-	at com.github.ajalt.clikt.core.CoreCliktCommandKt.parse(CoreCliktCommand.kt:107)
-	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:78)
-	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:90)
-	at org.ossreviewtoolkit.cli.OrtMainKt.main(OrtMain.kt:86)
-❌ Evaluator result missing or empty.
+===> Running ORT analyze...
+/bin/sh: 2: set: Illegal option -o pipefail
+❌ Analyzer result missing or empty.
 mypc@mypc-VirtualBox:~/FOSShub$ 
-
