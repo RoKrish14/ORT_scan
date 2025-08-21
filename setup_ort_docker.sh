@@ -1,1 +1,27 @@
-12:06:36.689 [DefaultDispatcher-worker-1] ERROR org.ossreviewtoolkit.analyzer.PackageManager - NPM failed to resolve dependencies for path 'puris/frontend/package.json': IllegalStateException: The path to 'package.json' is null in ModuleInfo(name=null, version=null, path=null, id=null, dependencyConstraints={}, dependencies={}, optional=false, dev=false, resolved=null).
+ort:
+  scanner:
+    skipExcluded: true
+    packageTypes: ["PROJECT"]          # ok as a list
+    sourceCodeOrigins: ["VCS"]         # ok as a list
+    scanners:
+      ScanCode:
+        options:
+          # These MUST be strings, not lists:
+          commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
+          commandLineNonConfig: "--processes,2"
+          # Optional, but often helpful:
+          # preferFileLicense: true
+
+analyzer:
+  allowDynamicVersions: false
+  downloadSources: false
+  enabled_package_managers:
+    - Gradle
+    - Maven
+    - NPM
+    - Bundler
+    - Pip
+
+downloader:
+  skip:
+    - "**"
