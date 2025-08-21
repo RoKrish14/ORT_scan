@@ -1,28 +1,15 @@
-he following 2 advisor(s) are enabled:
-        OSV, OSSIndex
-13:49:00.933 [OkHttp https://api.osv.dev/...] ERROR org.ossreviewtoolkit.utils.ort.OkHttpClientHelperKt - HTTP request to https://api.osv.dev/v1/querybatch failed with an exception: SocketTimeoutException: timeout
-Exception in thread "main" java.net.SocketTimeoutException: timeout
-	at okhttp3.internal.http2.Http2Stream$StreamTimeout.newTimeoutException(Http2Stream.kt:731)
-	at okhttp3.internal.http2.Http2Stream$StreamTimeout.exitAndThrowIfTimedOut(Http2Stream.kt:739)
-	at okhttp3.internal.http2.Http2Stream.takeHeaders(Http2Stream.kt:159)
-	at okhttp3.internal.http2.Http2ExchangeCodec.readResponseHeaders(Http2ExchangeCodec.kt:101)
-	at okhttp3.internal.connection.Exchange.readResponseHeaders(Exchange.kt:114)
-	at okhttp3.internal.http.CallServerInterceptor.intercept(CallServerInterceptor.kt:98)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:126)
-	at org.ossreviewtoolkit.utils.ort.OkHttpClientHelperKt$okHttpClient_delegate$lambda$4$$inlined$-addNetworkInterceptor$1.intercept(OkHttpClient.kt:1404)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:126)
-	at okhttp3.internal.connection.ConnectInterceptor.intercept(ConnectInterceptor.kt:34)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:126)
-	at okhttp3.internal.cache.CacheInterceptor.intercept(CacheInterceptor.kt:101)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:126)
-	at okhttp3.internal.http.BridgeInterceptor.intercept(BridgeInterceptor.kt:85)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:126)
-	at okhttp3.internal.http.RetryAndFollowUpInterceptor.intercept(RetryAndFollowUpInterceptor.kt:74)
-	at okhttp3.internal.http.RealInterceptorChain.proceed(RealInterceptorChain.kt:126)
-	at okhttp3.internal.connection.RealCall.getResponseWithInterceptorChain$okhttp(RealCall.kt:208)
-	at okhttp3.internal.connection.RealCall$AsyncCall.run(RealCall.kt:530)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
-	at java.base/java.lang.Thread.run(Thread.java:1583)
-❌ Advisor result missing or empty.
+18:33:41.953 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'LicenseView'. (script.rules.kts:11:41)
+Exception in thread "main" java.lang.RuntimeException: Using JDK home inferred from java.home: /opt/java/openjdk
+Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
+Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
+Unresolved reference 'LicenseView'.
+	at kotlin.script.experimental.api.ErrorHandlingKt.valueOrThrow(errorHandling.kt:305)
+	at org.ossreviewtoolkit.utils.scripting.ScriptRunner.runScript(ScriptRunner.kt:72)
+	at org.ossreviewtoolkit.evaluator.Evaluator.run(Evaluator.kt:56)
+	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand.run(EvaluateCommand.kt:335)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.parse(CoreCliktCommand.kt:107)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:78)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:90)
+	at org.ossreviewtoolkit.cli.OrtMainKt.main(OrtMain.kt:86)
+❌ Evaluator result missing or empty.
 mypc@mypc-VirtualBox:~/FOSShub$ 
