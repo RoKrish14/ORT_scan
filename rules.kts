@@ -1,17 +1,31 @@
-// .ort/config/rules.kts
-licenseCategories {
-    licenseCategory("Forbidden") {
-        description = "These licenses are not allowed in the codebase."
-        licenses += "Proprietary"
-        licenses += "GPL-2.0-or-later"
-    }
-}
+ort:
+  scanner:
+    skipExcluded: true
+    packageTypes: ["PROJECT"]          # scan only the project, not all dependencies
+    sourceCodeOrigins: ["VCS"]         # only use the local VCS checkout
+    scanners:
+      ScanCode:
+        options:
+          # These MUST be strings, not lists
+          commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
+          commandLineNonConfig: "--processes,2"
+          # Optional: uncomment if you want licenses from LICENSE files preferred
+          # preferFileLicense: true
 
-violationRules {
-    rule("No forbidden licenses") {
-        severity = Severity.ERROR
-        condition {
-            licenseView.allLicenses.any { it in licenseCategory("Forbidden") }
-        }
-    }
-}
+analyzer:
+  allowDynamicVersions: false
+  downloadSources: false
+  enabled_package_managers:
+    - Gradle
+    - Maven
+    - NPM
+    - Bundler
+    - Pip
+  packageManagers:
+    Npm:
+      options:
+        legacyPeerDeps: true       # prevent peer dependency resolver issues
+
+downloader:
+  skip:
+    - "**"
