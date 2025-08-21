@@ -8,7 +8,7 @@ import org.ossreviewtoolkit.evaluator.RuleMatcher
 import org.ossreviewtoolkit.evaluator.ruleSet
 import org.ossreviewtoolkit.model.LicenseSource
 import org.ossreviewtoolkit.model.Severity
-import org.ossreviewtoolkit.model.utils.LicenseView
+// (Removed LicenseView import; we rely on the DSL default view)
 
 // --- License classifications from license-classifications.yml ---
 val permissiveLicenses      = licenseClassifications.licensesByCategory["permissive"].orEmpty()
@@ -54,7 +54,8 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
     // Unhandled licenses -> ERROR
     packageRule("UNHANDLED_LICENSE") {
         require { -isExcluded() }
-        licenseRule("UNHANDLED_LICENSE", LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED) {
+        // Use default LicenseView (CONCLUDED_OR_DECLARED_AND_DETECTED)
+        licenseRule("UNHANDLED_LICENSE") {
             require { -isExcluded(); -isHandled() }
             error(
                 "License $license is not covered by policy. " +
@@ -78,7 +79,8 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
     // Copyleft detected in source -> ERROR
     packageRule("COPYLEFT_IN_SOURCE") {
         require { -isExcluded() }
-        licenseRule("COPYLEFT_IN_SOURCE", LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED) {
+        // Use default LicenseView
+        licenseRule("COPYLEFT_IN_SOURCE") {
             require { -isExcluded(); +isCopyleft() }
             val src = licenseSource.name.lowercase()
             val msg = if (licenseSource == LicenseSource.DETECTED)
@@ -92,7 +94,8 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
     // Copyleft-limited in source -> ERROR
     packageRule("COPYLEFT_LIMITED_IN_SOURCE") {
         require { -isExcluded() }
-        licenseRule("COPYLEFT_LIMITED_IN_SOURCE", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
+        // Use default LicenseView
+        licenseRule("COPYLEFT_LIMITED_IN_SOURCE") {
             require { -isExcluded(); +isCopyleftLimited() }
             val src = licenseSource.name.lowercase()
             val msg = if (licenseSource == LicenseSource.DETECTED)
