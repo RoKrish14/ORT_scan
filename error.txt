@@ -1,28 +1,5 @@
-
-ort:
-  scanner:
-    skipExcluded: true
-    packageTypes: ["PROJECT"]          # ok as a list
-    sourceCodeOrigins: ["VCS"]         # ok as a list
-    scanners:
-      ScanCode:
-        options:
-          # These MUST be strings, not lists:
-          commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
-          commandLineNonConfig: "--processes,2"
-          # Optional, but often helpful:
-          # preferFileLicense: true
-
-analyzer:
-  allowDynamicVersions: false
-  downloadSources: false
-  enabled_package_managers:
-    - Gradle
-    - Maven
-    - NPM
-    - Bundler
-    - Pip
-
-downloader:
-  skip:
-    - "**"
+The following 3 advisor(s) are enabled:
+        OSV, OSSIndex, VulnerableCode
+07:52:14.667 [DefaultDispatcher-worker-4] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - The request of chunk 1 of 7 failed for the following 100 PURL(s):
+07:52:14.762 [DefaultDispatcher-worker-4] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - pkg:maven/org.apache.commons/commons-math3@3.6.1
+07:52:14.769 [DefaultDispatcher-worker-4] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - pkg:npm/rxjs@7.8.1
