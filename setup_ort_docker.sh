@@ -1,15 +1,15 @@
 ort:
   scanner:
     skipExcluded: true
-    packageTypes: ["PROJECT"]          # ok as a list
-    sourceCodeOrigins: ["VCS"]         # ok as a list
+    packageTypes: ["PROJECT"]          # scan only the project, not all dependencies
+    sourceCodeOrigins: ["VCS"]         # only use the local VCS checkout
     scanners:
       ScanCode:
         options:
-          # These MUST be strings, not lists:
+          # These MUST be strings, not lists
           commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
           commandLineNonConfig: "--processes,2"
-          # Optional, but often helpful:
+          # Optional: uncomment if you want licenses from LICENSE files preferred
           # preferFileLicense: true
 
 analyzer:
@@ -21,6 +21,10 @@ analyzer:
     - NPM
     - Bundler
     - Pip
+  packageManagers:
+    Npm:
+      options:
+        legacyPeerDeps: true       # prevent peer dependency resolver issues
 
 downloader:
   skip:
