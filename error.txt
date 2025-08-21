@@ -3,3 +3,15 @@ The following 3 advisor(s) are enabled:
 07:52:14.667 [DefaultDispatcher-worker-4] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - The request of chunk 1 of 7 failed for the following 100 PURL(s):
 07:52:14.762 [DefaultDispatcher-worker-4] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - pkg:maven/org.apache.commons/commons-math3@3.6.1
 07:52:14.769 [DefaultDispatcher-worker-4] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - pkg:npm/rxjs@7.8.1
+
+and many more....
+
+07:52:17.020 [DefaultDispatcher-worker-7] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - pkg:npm/jsonfile@6.1.0
+07:52:17.020 [DefaultDispatcher-worker-7] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - pkg:npm/has-symbols@1.1.0
+07:52:17.020 [DefaultDispatcher-worker-7] ERROR org.ossreviewtoolkit.plugins.advisors.vulnerablecode.VulnerableCode - pkg:npm/mustache@4.2.0
+Wrote advisor result to '/ort/data/advisor-result/advisor-result.yml' (10.18 MiB) in 2.689342763s.
+The advice took 12.252815590s.
+7 of 320 package(s) (not counting excluded ones) are vulnerable, with 7 vulnerabilities in total.
+Resolved issues: 0 errors, 0 warnings, 0 hints.
+Unresolved issues: 7596 errors, 0 warnings, 0 hints.
+There are 7596 unresolved issues with a severity equal to or greater than the WARNING threshold.
