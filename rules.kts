@@ -12,6 +12,17 @@ ort:
           # Optional: uncomment if you want licenses from LICENSE files preferred
           # preferFileLicense: true
 
+  advisor:
+    advisors:
+      OSV:
+        options:
+          # Switch endpoint if api.osv.dev is unreliable in your environment
+          serverUrl: "https://api.osv.dev"
+          # If timeouts persist, try:
+          # serverUrl: "https://api-staging.osv.dev"
+      OSSIndex: {}
+      # VulnerableCode: {}   # Uncomment if you also want VulnerableCode enabled
+
 analyzer:
   allowDynamicVersions: false
   downloadSources: false
