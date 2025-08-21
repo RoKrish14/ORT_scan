@@ -8,7 +8,7 @@ import org.ossreviewtoolkit.evaluator.RuleMatcher
 import org.ossreviewtoolkit.evaluator.ruleSet
 import org.ossreviewtoolkit.model.LicenseSource
 import org.ossreviewtoolkit.model.Severity
-// (Removed LicenseView import; we rely on the DSL default view)
+// NOTE: We deliberately avoid importing LicenseView; we’ll use the FQCN below.
 
 // --- License classifications from license-classifications.yml ---
 val permissiveLicenses      = licenseClassifications.licensesByCategory["permissive"].orEmpty()
@@ -54,8 +54,10 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
     // Unhandled licenses -> ERROR
     packageRule("UNHANDLED_LICENSE") {
         require { -isExcluded() }
-        // Use default LicenseView (CONCLUDED_OR_DECLARED_AND_DETECTED)
-        licenseRule("UNHANDLED_LICENSE") {
+        licenseRule(
+            "UNHANDLED_LICENSE",
+            org.ossreviewtoolkit.model.licenses.LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED
+        ) {
             require { -isExcluded(); -isHandled() }
             error(
                 "License $license is not covered by policy. " +
@@ -79,8 +81,10 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
     // Copyleft detected in source -> ERROR
     packageRule("COPYLEFT_IN_SOURCE") {
         require { -isExcluded() }
-        // Use default LicenseView
-        licenseRule("COPYLEFT_IN_SOURCE") {
+        licenseRule(
+            "COPYLEFT_IN_SOURCE",
+            org.ossreviewtoolkit.model.licenses.LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED
+        ) {
             require { -isExcluded(); +isCopyleft() }
             val src = licenseSource.name.lowercase()
             val msg = if (licenseSource == LicenseSource.DETECTED)
@@ -94,8 +98,10 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
     // Copyleft-limited in source -> ERROR
     packageRule("COPYLEFT_LIMITED_IN_SOURCE") {
         require { -isExcluded() }
-        // Use default LicenseView
-        licenseRule("COPYLEFT_LIMITED_IN_SOURCE") {
+        licenseRule(
+            "COPYLEFT_LIMITED_IN_SOURCE",
+            org.ossreviewtoolkit.model.licenses.LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED
+        ) {
             require { -isExcluded(); +isCopyleftLimited() }
             val src = licenseSource.name.lowercase()
             val msg = if (licenseSource == LicenseSource.DETECTED)
