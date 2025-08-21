@@ -1,206 +1,42 @@
-/*******************************************************
- * ORT rules.kts — safe for local / project-only scans *
- * - Avoids projectSource* rules (no remote downloads) *
- * - Only runs dependency rules if packages exist      *
- *******************************************************/
-
-import org.ossreviewtoolkit.evaluator.RuleSet
-import org.ossreviewtoolkit.evaluator.PackageRule
-import org.ossreviewtoolkit.evaluator.ProjectRule
-import org.ossreviewtoolkit.model.Severity
-import org.ossreviewtoolkit.model.LicenseSource
-import org.ossreviewtoolkit.model.utils.LicenseView
-import org.ossreviewtoolkit.evaluator.ruleViolation
-import org.ossreviewtoolkit.evaluator.ruleViolations
-import org.ossreviewtoolkit.evaluator.ruleSet
-
-// ---- License classifications from license-classifications.yml ----
-val permissiveLicenses        = licenseClassifications.licensesByCategory["permissive"].orEmpty()
-val copyleftLicenses          = licenseClassifications.licensesByCategory["copyleft"].orEmpty()
-val copyleftLimitedLicenses   = licenseClassifications.licensesByCategory["copyleft-limited"].orEmpty()
-val publicDomainLicenses      = licenseClassifications.licensesByCategory["public-domain"].orEmpty()
-
-val handledLicenses = listOf(
-    permissiveLicenses,
-    publicDomainLicenses,
-    copyleftLicenses,
-    copyleftLimitedLicenses
-).flatten().let {
-    val duplicates = it.getDuplicates()
-    require(duplicates.isEmpty()) { "The classifications for the following licenses overlap: $duplicates" }
-    it.toSet()
-}
-
-// ---- Helpers ----
-fun PackageRule.howToFixDefault() = """
-    A text written in Markdown to help users resolve policy violations,
-    linking to additional resources as needed.
-""".trimIndent()
-
-fun PackageRule.LicenseRule.isHandled() = object : RuleMatcher {
-    override val description = "isHandled($license)"
-    override fun matches() =
-        license in handledLicenses && ("-exception" !in license.toString() || " WITH " in license.toString())
-}
-
-fun PackageRule.LicenseRule.isCopyleft() = object : RuleMatcher {
-    override val description = "isCopyleft($license)"
-    override fun matches() = license in copyleftLicenses
-}
-
-fun PackageRule.LicenseRule.isCopyleftLimited() = object : RuleMatcher {
-    override val description = "isCopyleftLimited($license)"
-    override fun matches() = license in copyleftLimitedLicenses
-}
-
-// Consider it a project-only scan if there are no packages in the result.
-val isProjectOnlyScan = packages.isEmpty()
-
-// ---- Rules (no projectSource* usage) ----
-fun RuleSet.unhandledLicenseRule() = packageRule("UNHANDLED_LICENSE") {
-    require { -isExcluded() }
-    licenseRule("UNHANDLED_LICENSE", LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED) {
-        require { -isExcluded(); -isHandled() }
-        error(
-            "The license $license is not covered by policy rules. " +
-            "The license was ${licenseSource.name.lowercase()} in package ${pkg.metadata.id.toCoordinates()}.",
-            howToFixDefault()
-        )
-    }
-}
-
-fun RuleSet.unmappedDeclaredLicenseRule() = packageRule("UNMAPPED_DECLARED_LICENSE") {
-    require { -isExcluded() }
-    resolvedLicenseInfo.licenseInfo.declaredLicenseInfo.processed.unmapped.forEach { unmappedLicense ->
-        warning(
-            "The declared license '$unmappedLicense' could not be mapped to a valid SPDX expression " +
-            "in package ${pkg.metadata.id.toCoordinates()}.",
-            howToFixDefault()
-        )
-    }
-}
-
-fun RuleSet.copyleftInSourceRule() = packageRule("COPYLEFT_IN_SOURCE") {
-    require { -isExcluded() }
-    licenseRule("COPYLEFT_IN_SOURCE", LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED) {
-        require { -isExcluded(); +isCopyleft() }
-        val src = licenseSource.name.lowercase()
-        val msg = if (licenseSource == LicenseSource.DETECTED)
-            "The ScanCode copyleft-categorized license $license was $src in ${pkg.metadata.id.toCoordinates()}."
-        else
-            "Package ${pkg.metadata.id.toCoordinates()} has the $src ScanCode copyleft-categorized license $license."
-        error(msg, howToFixDefault())
-    }
-}
-
-fun RuleSet.copyleftLimitedInSourceRule() = packageRule("COPYLEFT_LIMITED_IN_SOURCE") {
-    require { -isExcluded() }
-    licenseRule("COPYLEFT_LIMITED_IN_SOURCE", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
-        require { -isExcluded(); +isCopyleftLimited() }
-        val src = licenseSource.name.lowercase()
-        val msg = if (licenseSource == LicenseSource.DETECTED)
-            "The ScanCode copyleft-limited categorized license $license was $src in ${pkg.metadata.id.toCoordinates()}."
-        else
-            "Package ${pkg.metadata.id.toCoordinates()} has the $src ScanCode copyleft-limited categorized license $license."
-        error(msg, howToFixDefault())
-    }
-}
-
-fun RuleSet.vulnerabilityInPackageRule() = packageRule("VULNERABILITY_IN_PACKAGE") {
-    require { -isExcluded(); +hasVulnerability() }
-    issue(
-        Severity.WARNING,
-        "The package ${pkg.metadata.id.toCoordinates()} has at least one reported vulnerability.",
-        howToFixDefault()
-    )
-}
-
-fun RuleSet.highSeverityVulnerabilityInPackageRule() = packageRule("HIGH_SEVERITY_VULNERABILITY_IN_PACKAGE") {
-    val scoreThreshold = 5.0f
-    val scoringSystem = "CVSS:3.1"
-    require { -isExcluded(); +hasVulnerability(scoreThreshold, scoringSystem) }
-    issue(
-        Severity.ERROR,
-        "The package ${pkg.metadata.id.toCoordinates()} has a vulnerability with $scoringSystem > $scoreThreshold.",
-        howToFixDefault()
-    )
-}
-
-// Dependency rules only make sense when packages exist.
-fun RuleSet.copyleftInDependencyRule() {
-    if (isProjectOnlyScan) return
-    dependencyRule("COPYLEFT_IN_DEPENDENCY") {
-        licenseRule("COPYLEFT_IN_DEPENDENCY", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
-            require { +isCopyleft() }
-            issue(
-                Severity.ERROR,
-                "Project ${project.id.toCoordinates()} has a dependency under ScanCode copyleft license $license.",
-                howToFixDefault()
-            )
-        }
-    }
-}
-
-fun RuleSet.copyleftLimitedInDependencyRule() {
-    if (isProjectOnlyScan) return
-    dependencyRule("COPYLEFT_LIMITED_IN_DEPENDENCY_RULE") {
-        require { +isAtTreeLevel(0); +isStaticallyLinked() }
-        licenseRule("COPYLEFT_LIMITED_IN_DEPENDENCY_RULE", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
-            require { +isCopyleftLimited() }
-            issue(
-                Severity.WARNING,
-                "Project ${project.id.toCoordinates()} has a statically linked direct dependency under " +
-                "ScanCode copyleft-limited license $license.",
-                howToFixDefault()
-            )
-        }
-    }
-}
-
-// Example root LICENSE sanity rule that does NOT use projectSource* helpers.
-// If you don’t have a root LICENSE in project-only runs, you can remove this entirely.
-fun RuleSet.rootLicenseSanityRule() = ortResultRule("ROOT_LICENSE_SANITY") {
-    // If no projects are present, skip silently.
-    if (projects.isEmpty()) return@ortResultRule
-
-    // Relaxed check: rely on detected licenses attached to the project itself.
-    val allowedRootLicenses = setOf("Apache-2.0", "MIT")
-    projects.forEach { prj ->
-        val detected = licenseInfoResolver
-            .resolveLicenseInfo(prj.id)
-            .getDetectedLicenses()
-            .map { it.license.toString() }
-            .toSet()
-
-        val wrong = detected - allowedRootLicenses
-        if (wrong.isNotEmpty()) {
-            error(
-                "Project ${prj.id.toCoordinates()} contains disallowed licenses at root: ${wrong.joinToString()}.",
-                "Please use only: ${allowedRootLicenses.joinToString()}."
-            )
-        }
-    }
-}
-
-// -- Assemble the ruleset --
-val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
-    // Package-level license rules
-    unhandledLicenseRule()
-    unmappedDeclaredLicenseRule()
-    copyleftInSourceRule()
-    copyleftLimitedInSourceRule()
-
-    // Vulnerabilities
-    vulnerabilityInPackageRule()
-    highSeverityVulnerabilityInPackageRule()
-
-    // Dependency rules (skip when project-only)
-    copyleftInDependencyRule()
-    copyleftLimitedInDependencyRule()
-
-    // NO projectSource* rules here → no remote VCS checkout attempts
-    rootLicenseSanityRule()
-}
-
-// Populate violations
-ruleViolations += ruleSet.violations
+Looking for evaluator-specific configuration in the following files, directories and resources:
+        /home/ort/.ort/config/copyright-garbage.yml
+        /home/ort/.ort/config/license-classifications.yml
+        /home/ort/.ort/config/resolutions.yml
+        /home/ort/.ort/config/rules.kts
+12:37:13.021 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'ProjectRule'. (script.rules.kts:9:39)
+12:37:13.026 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'LicenseView'. (script.rules.kts:12:41)
+12:37:13.027 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'ruleViolation'. (script.rules.kts:13:39)
+12:37:13.029 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'ruleViolations'. (script.rules.kts:14:39)
+12:37:13.029 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'packages'. (script.rules.kts:57:25)
+12:37:13.029 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'projects'. (script.rules.kts:164:9)
+12:37:13.030 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'projects'. (script.rules.kts:168:5)
+12:37:13.030 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Cannot infer type for this parameter. Specify it explicitly. (script.rules.kts:168:24)
+12:37:13.030 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'id'. (script.rules.kts:170:37)
+12:37:13.030 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'getDetectedLicenses'. (script.rules.kts:171:14)
+12:37:13.031 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'license'. (script.rules.kts:172:23)
+12:37:13.031 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'id'. (script.rules.kts:178:32)
+Exception in thread "main" java.lang.RuntimeException: Using JDK home inferred from java.home: /opt/java/openjdk
+Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
+Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
+Unresolved reference 'ProjectRule'.
+Unresolved reference 'LicenseView'.
+Unresolved reference 'ruleViolation'.
+Unresolved reference 'ruleViolations'.
+Unresolved reference 'packages'.
+Unresolved reference 'projects'.
+Unresolved reference 'projects'.
+Cannot infer type for this parameter. Specify it explicitly.
+Unresolved reference 'id'.
+Unresolved reference 'getDetectedLicenses'.
+Unresolved reference 'license'.
+Unresolved reference 'id'.
+	at kotlin.script.experimental.api.ErrorHandlingKt.valueOrThrow(errorHandling.kt:305)
+	at org.ossreviewtoolkit.utils.scripting.ScriptRunner.runScript(ScriptRunner.kt:72)
+	at org.ossreviewtoolkit.evaluator.Evaluator.run(Evaluator.kt:56)
+	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand.run(EvaluateCommand.kt:335)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.parse(CoreCliktCommand.kt:107)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:78)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:90)
+	at org.ossreviewtoolkit.cli.OrtMainKt.main(OrtMain.kt:86)
+❌ Evaluator result missing or empty.
+mypc@mypc-VirtualBox:~/FOSShub$ 
