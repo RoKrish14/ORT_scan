@@ -1,73 +1,69 @@
 /*******************************************************
- * Example OSS Review Toolkit (ORT) .rules.kts file    *
- *                                                     *
- * Adjusted for local directory scanning without VCS. *
+ * ORT rules.kts — safe for local / project-only scans *
+ * - Avoids projectSource* rules (no remote downloads) *
+ * - Only runs dependency rules if packages exist      *
  *******************************************************/
 
-/**
- * Import the license classifications from license-classifications.yml.
- */
-val permissiveLicenses = licenseClassifications.licensesByCategory["permissive"].orEmpty()
-val copyleftLicenses = licenseClassifications.licensesByCategory["copyleft"].orEmpty()
-val copyleftLimitedLicenses = licenseClassifications.licensesByCategory["copyleft-limited"].orEmpty()
-val publicDomainLicenses = licenseClassifications.licensesByCategory["public-domain"].orEmpty()
+import org.ossreviewtoolkit.evaluator.RuleSet
+import org.ossreviewtoolkit.evaluator.PackageRule
+import org.ossreviewtoolkit.evaluator.ProjectRule
+import org.ossreviewtoolkit.model.Severity
+import org.ossreviewtoolkit.model.LicenseSource
+import org.ossreviewtoolkit.model.utils.LicenseView
+import org.ossreviewtoolkit.evaluator.ruleViolation
+import org.ossreviewtoolkit.evaluator.ruleViolations
+import org.ossreviewtoolkit.evaluator.ruleSet
 
-// The complete set of licenses covered by policy rules.
+// ---- License classifications from license-classifications.yml ----
+val permissiveLicenses        = licenseClassifications.licensesByCategory["permissive"].orEmpty()
+val copyleftLicenses          = licenseClassifications.licensesByCategory["copyleft"].orEmpty()
+val copyleftLimitedLicenses   = licenseClassifications.licensesByCategory["copyleft-limited"].orEmpty()
+val publicDomainLicenses      = licenseClassifications.licensesByCategory["public-domain"].orEmpty()
+
 val handledLicenses = listOf(
     permissiveLicenses,
     publicDomainLicenses,
     copyleftLicenses,
     copyleftLimitedLicenses
 ).flatten().let {
-    it.getDuplicates().let { duplicates ->
-        require(duplicates.isEmpty()) {
-            "The classifications for the following licenses overlap: $duplicates"
-        }
-    }
+    val duplicates = it.getDuplicates()
+    require(duplicates.isEmpty()) { "The classifications for the following licenses overlap: $duplicates" }
     it.toSet()
 }
 
-/**
- * Return the Markdown-formatted text to aid users with resolving violations.
- */
+// ---- Helpers ----
 fun PackageRule.howToFixDefault() = """
-        A text written in MarkDown to help users resolve policy violations
-        which may link to additional resources.
-    """.trimIndent()
+    A text written in Markdown to help users resolve policy violations,
+    linking to additional resources as needed.
+""".trimIndent()
 
-/**
- * Set of matchers to help keep policy rules easy to understand
- */
-fun PackageRule.LicenseRule.isHandled() =
-    object : RuleMatcher {
-        override val description = "isHandled($license)"
-        override fun matches() =
-            license in handledLicenses && ("-exception" !in license.toString() || " WITH " in license.toString())
-    }
+fun PackageRule.LicenseRule.isHandled() = object : RuleMatcher {
+    override val description = "isHandled($license)"
+    override fun matches() =
+        license in handledLicenses && ("-exception" !in license.toString() || " WITH " in license.toString())
+}
 
-fun PackageRule.LicenseRule.isCopyleft() =
-    object : RuleMatcher {
-        override val description = "isCopyleft($license)"
-        override fun matches() = license in copyleftLicenses
-    }
+fun PackageRule.LicenseRule.isCopyleft() = object : RuleMatcher {
+    override val description = "isCopyleft($license)"
+    override fun matches() = license in copyleftLicenses
+}
 
-fun PackageRule.LicenseRule.isCopyleftLimited() =
-    object : RuleMatcher {
-        override val description = "isCopyleftLimited($license)"
-        override fun matches() = license in copyleftLimitedLicenses
-    }
+fun PackageRule.LicenseRule.isCopyleftLimited() = object : RuleMatcher {
+    override val description = "isCopyleftLimited($license)"
+    override fun matches() = license in copyleftLimitedLicenses
+}
 
-/**
- * Example policy rules
- */
+// Consider it a project-only scan if there are no packages in the result.
+val isProjectOnlyScan = packages.isEmpty()
+
+// ---- Rules (no projectSource* usage) ----
 fun RuleSet.unhandledLicenseRule() = packageRule("UNHANDLED_LICENSE") {
     require { -isExcluded() }
     licenseRule("UNHANDLED_LICENSE", LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED) {
         require { -isExcluded(); -isHandled() }
         error(
-            "The license $license is currently not covered by policy rules. " +
-            "The license was ${licenseSource.name.lowercase()} in package " +
-            "${pkg.metadata.id.toCoordinates()}.",
+            "The license $license is not covered by policy rules. " +
+            "The license was ${licenseSource.name.lowercase()} in package ${pkg.metadata.id.toCoordinates()}.",
             howToFixDefault()
         )
     }
@@ -77,8 +73,8 @@ fun RuleSet.unmappedDeclaredLicenseRule() = packageRule("UNMAPPED_DECLARED_LICEN
     require { -isExcluded() }
     resolvedLicenseInfo.licenseInfo.declaredLicenseInfo.processed.unmapped.forEach { unmappedLicense ->
         warning(
-            "The declared license '$unmappedLicense' could not be mapped to a valid license or parsed as an SPDX " +
-            "expression. The license was found in package ${pkg.metadata.id.toCoordinates()}.",
+            "The declared license '$unmappedLicense' could not be mapped to a valid SPDX expression " +
+            "in package ${pkg.metadata.id.toCoordinates()}.",
             howToFixDefault()
         )
     }
@@ -88,48 +84,25 @@ fun RuleSet.copyleftInSourceRule() = packageRule("COPYLEFT_IN_SOURCE") {
     require { -isExcluded() }
     licenseRule("COPYLEFT_IN_SOURCE", LicenseView.CONCLUDED_OR_DECLARED_AND_DETECTED) {
         require { -isExcluded(); +isCopyleft() }
-        val message = if (licenseSource == LicenseSource.DETECTED) {
-            "The ScanCode copyleft categorized license $license was ${licenseSource.name.lowercase()} " +
-            "in package ${pkg.metadata.id.toCoordinates()}."
-        } else {
-            "The package ${pkg.metadata.id.toCoordinates()} has the ${licenseSource.name.lowercase()} ScanCode copyleft " +
-            "catalogized license $license."
-        }
-        error(message, howToFixDefault())
+        val src = licenseSource.name.lowercase()
+        val msg = if (licenseSource == LicenseSource.DETECTED)
+            "The ScanCode copyleft-categorized license $license was $src in ${pkg.metadata.id.toCoordinates()}."
+        else
+            "Package ${pkg.metadata.id.toCoordinates()} has the $src ScanCode copyleft-categorized license $license."
+        error(msg, howToFixDefault())
     }
 }
 
-fun RuleSet.copyleftInSourceLimitedRule() = packageRule("COPYLEFT_LIMITED_IN_SOURCE") {
+fun RuleSet.copyleftLimitedInSourceRule() = packageRule("COPYLEFT_LIMITED_IN_SOURCE") {
     require { -isExcluded() }
     licenseRule("COPYLEFT_LIMITED_IN_SOURCE", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
         require { -isExcluded(); +isCopyleftLimited() }
-        val licenseSourceName = licenseSource.name.lowercase()
-        val message = if (licenseSource == LicenseSource.DETECTED) {
-            "The ScanCode copyleft-limited categorized license $license was $licenseSourceName in package " +
-            "${pkg.metadata.id.toCoordinates()}."
-        } else {
-            "The package ${pkg.metadata.id.toCoordinates()} has the $licenseSourceName ScanCode copyleft-limited " +
-            "categorized license $license."
-        }
-        error(message, howToFixDefault())
-    }
-}
-
-fun RuleSet.dependencyInProjectSourceRule() = projectSourceRule("DEPENDENCY_IN_PROJECT_SOURCE_RULE") {
-    val denyDirPatterns = listOf(
-        "**/node_modules" to setOf("NPM", "Yarn", "PNPM"),
-        "**/vendor" to setOf("GoMod")
-    )
-    denyDirPatterns.forEach { (pattern, packageManagers) ->
-        val offendingDirs = projectSourceFindDirectories(pattern)
-        if (offendingDirs.isNotEmpty()) {
-            issue(
-                Severity.ERROR,
-                "The directories ${offendingDirs.joinToString()} belong to the package manager(s) " +
-                "${packageManagers.joinToString()} and must not be committed.",
-                "Please delete the directories: ${offendingDirs.joinToString()}."
-            )
-        }
+        val src = licenseSource.name.lowercase()
+        val msg = if (licenseSource == LicenseSource.DETECTED)
+            "The ScanCode copyleft-limited categorized license $license was $src in ${pkg.metadata.id.toCoordinates()}."
+        else
+            "Package ${pkg.metadata.id.toCoordinates()} has the $src ScanCode copyleft-limited categorized license $license."
+        error(msg, howToFixDefault())
     }
 }
 
@@ -137,7 +110,7 @@ fun RuleSet.vulnerabilityInPackageRule() = packageRule("VULNERABILITY_IN_PACKAGE
     require { -isExcluded(); +hasVulnerability() }
     issue(
         Severity.WARNING,
-        "The package ${pkg.metadata.id.toCoordinates()} has a vulnerability",
+        "The package ${pkg.metadata.id.toCoordinates()} has at least one reported vulnerability.",
         howToFixDefault()
     )
 }
@@ -148,126 +121,85 @@ fun RuleSet.highSeverityVulnerabilityInPackageRule() = packageRule("HIGH_SEVERIT
     require { -isExcluded(); +hasVulnerability(scoreThreshold, scoringSystem) }
     issue(
         Severity.ERROR,
-        "The package ${pkg.metadata.id.toCoordinates()} has a vulnerability with $scoringSystem severity > $scoreThreshold",
+        "The package ${pkg.metadata.id.toCoordinates()} has a vulnerability with $scoringSystem > $scoreThreshold.",
         howToFixDefault()
     )
 }
 
-fun RuleSet.copyleftInDependencyRule() = dependencyRule("COPYLEFT_IN_DEPENDENCY") {
-    licenseRule("COPYLEFT_IN_DEPENDENCY", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
-        require { +isCopyleft() }
-        issue(
-            Severity.ERROR,
-            "The project ${project.id.toCoordinates()} has a dependency licensed under the ScanCode " +
-            "copyleft categorized license $license.",
-            howToFixDefault()
-        )
+// Dependency rules only make sense when packages exist.
+fun RuleSet.copyleftInDependencyRule() {
+    if (isProjectOnlyScan) return
+    dependencyRule("COPYLEFT_IN_DEPENDENCY") {
+        licenseRule("COPYLEFT_IN_DEPENDENCY", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
+            require { +isCopyleft() }
+            issue(
+                Severity.ERROR,
+                "Project ${project.id.toCoordinates()} has a dependency under ScanCode copyleft license $license.",
+                howToFixDefault()
+            )
+        }
     }
 }
 
-fun RuleSet.copyleftLimitedInDependencyRule() = dependencyRule("COPYLEFT_LIMITED_IN_DEPENDENCY_RULE") {
-    require { +isAtTreeLevel(0); +isStaticallyLinked() }
-    licenseRule("COPYLEFT_LIMITED_IN_DEPENDENCY_RULE", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
-        require { +isCopyleftLimited() }
-        issue(
-            Severity.WARNING,
-            "The project ${project.id.toCoordinates()} has a statically linked direct dependency licensed " +
-            "under the ScanCode copyleft-left categorized license $license.",
-            howToFixDefault()
-        )
+fun RuleSet.copyleftLimitedInDependencyRule() {
+    if (isProjectOnlyScan) return
+    dependencyRule("COPYLEFT_LIMITED_IN_DEPENDENCY_RULE") {
+        require { +isAtTreeLevel(0); +isStaticallyLinked() }
+        licenseRule("COPYLEFT_LIMITED_IN_DEPENDENCY_RULE", LicenseView.CONCLUDED_OR_DECLARED_OR_DETECTED) {
+            require { +isCopyleftLimited() }
+            issue(
+                Severity.WARNING,
+                "Project ${project.id.toCoordinates()} has a statically linked direct dependency under " +
+                "ScanCode copyleft-limited license $license.",
+                howToFixDefault()
+            )
+        }
     }
 }
 
-fun RuleSet.deprecatedScopeExcludeReasonInOrtYmlRule() = ortResultRule("DEPRECATED_SCOPE_EXCLUDE_REASON_IN_ORT_YML") {
-    val reasons = ortResult.repository.config.excludes.scopes.mapTo(mutableSetOf()) { it.reason }
-    @Suppress("DEPRECATION")
-    val deprecatedReasons = setOf(ScopeExcludeReason.TEST_TOOL_OF)
-    reasons.intersect(deprecatedReasons).forEach { offendingReason ->
-        warning(
-            "The repository configuration is using the deprecated scope exclude reason '$offendingReason'.",
-            "Please use only non-deprecated scope exclude reasons."
-        )
+// Example root LICENSE sanity rule that does NOT use projectSource* helpers.
+// If you don’t have a root LICENSE in project-only runs, you can remove this entirely.
+fun RuleSet.rootLicenseSanityRule() = ortResultRule("ROOT_LICENSE_SANITY") {
+    // If no projects are present, skip silently.
+    if (projects.isEmpty()) return@ortResultRule
+
+    // Relaxed check: rely on detected licenses attached to the project itself.
+    val allowedRootLicenses = setOf("Apache-2.0", "MIT")
+    projects.forEach { prj ->
+        val detected = licenseInfoResolver
+            .resolveLicenseInfo(prj.id)
+            .getDetectedLicenses()
+            .map { it.license.toString() }
+            .toSet()
+
+        val wrong = detected - allowedRootLicenses
+        if (wrong.isNotEmpty()) {
+            error(
+                "Project ${prj.id.toCoordinates()} contains disallowed licenses at root: ${wrong.joinToString()}.",
+                "Please use only: ${allowedRootLicenses.joinToString()}."
+            )
+        }
     }
 }
 
-fun RuleSet.missingCiConfigurationRule() = projectSourceRule("MISSING_CI_CONFIGURATION") {
-    require {
-        -AnyOf(
-            projectSourceHasFile(".appveyor.yml", ".bitbucket-pipelines.yml", ".gitlab-ci.yml", ".travis.yml"),
-            projectSourceHasDirectory(".circleci", ".github/workflows")
-        )
-    }
-    error(
-        message = "This project does not have any known CI configuration files.",
-        howToFix = "Please setup a CI."
-    )
-}
-
-fun RuleSet.missingContributingFileRule() = projectSourceRule("MISSING_CONTRIBUTING_FILE") {
-    require { -projectSourceHasFile("CONTRIBUTING.md") }
-    error("The project's code repository does not contain the file 'CONTRIBUTING.md'.")
-}
-
-fun RuleSet.missingReadmeFileRule() = projectSourceRule("MISSING_README_FILE") {
-    require { -projectSourceHasFile("README.md") }
-    error("The project's code repository does not contain the file 'README.md'.")
-}
-
-fun RuleSet.missingReadmeFileLicenseSectionRule() = projectSourceRule("MISSING_README_FILE_LICENSE_SECTION") {
-    require { +projectSourceHasFile("README.md"); -projectSourceHasFileWithContent(".*^#{1,2} License$.*", "README.md") }
-    error(
-        message = "The file 'README.md' is missing a \"License\" section.",
-        howToFix = "Please add a \"License\" section."
-    )
-}
-
-fun RuleSet.wrongLicenseInLicenseFileRule() = projectSourceRule("WRONG_LICENSE_IN_LICENSE_FILE_RULE") {
-    require { +projectSourceHasFile("LICENSE") }
-    val allowedRootLicenses = setOf("Apackage-2.0", "MIT")
-    val detectedRootLicenses = projectSourceGetDetectedLicensesByFilePath("LICENSE").values.flatten().toSet()
-    val wrongLicenses = detectedRootLicenses - allowedRootLicenses
-    if (wrongLicenses.isNotEmpty()) {
-        error(
-            message = "The file 'LICENSE' contains the following disallowed licenses ${wrongLicenses.joinToString()}.",
-            howToFix = "Please use only the following allowed licenses: ${allowedRootLicenses.joinToString()}."
-        )
-    } else if (detectedRootLicenses.isEmpty()) {
-        error(
-            message = "The file 'LICENSE' does not contain any license which is not allowed.",
-            howToFix = "Please use one of the following allowed licenses: ${allowedRootLicenses.joinToString()}."
-        )
-    }
-}
-
-/**
- * Helper to check if VCS info exists
- */
-fun hasVcsInfo() = !ortResult.repository.vcs.url.isNullOrEmpty()
-
-/**
- * The set of policy rules.
- */
+// -- Assemble the ruleset --
 val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
-    // Always run these
+    // Package-level license rules
     unhandledLicenseRule()
     unmappedDeclaredLicenseRule()
     copyleftInSourceRule()
-    copyleftInSourceLimitedRule()
+    copyleftLimitedInSourceRule()
+
+    // Vulnerabilities
     vulnerabilityInPackageRule()
     highSeverityVulnerabilityInPackageRule()
+
+    // Dependency rules (skip when project-only)
     copyleftInDependencyRule()
     copyleftLimitedInDependencyRule()
-    deprecatedScopeExcludeReasonInOrtYmlRule()
 
-    // Only run repo-hygiene rules if VCS info exists
-    if (hasVcsInfo()) {
-        dependencyInProjectSourceRule()
-        missingCiConfigurationRule()
-        missingContributingFileRule()
-        missingReadmeFileRule()
-        missingReadmeFileLicenseSectionRule()
-        wrongLicenseInLicenseFileRule()
-    }
+    // NO projectSource* rules here → no remote VCS checkout attempts
+    rootLicenseSanityRule()
 }
 
 // Populate violations
