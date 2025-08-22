@@ -1,15 +1,2 @@
-# .ort/config/license-classifications.yml
-categories:
-  - name: "Allowed"
-    licenses:
-      - "MIT"
-      - "Apache-2.0"
-      - "BSD-3-Clause"
-  - name: "Restricted"
-    licenses:
-      - "GPL-2.0-or-later"
-      - "GPL-3.0-only"
-      - "AGPL-3.0-only"
-  - name: "Forbidden"
-    licenses:
-      - "Proprietary"
+Error: got unexpected extra arguments (Licensee, Fossology)
+Error: invalid value for --project-scanners: Scanner '' is not one of [Askalono, DOS, FossId, Licensee, ScanCode, SCANOSS].
