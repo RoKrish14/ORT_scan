@@ -1,42 +1,79 @@
+# Universal ORT configuration template
+# Goal: fast + reliable defaults, easy to tighten/expand per project.
+
 ort:
   scanner:
+    # Keep scans fast by default (only scan the repo, not all dependencies).
+    # Switch to ["PROJECT","PACKAGE"] when you want full dependency scans.
+    packageTypes: ["PROJECT"]
+
+    # Use the local checkout; avoids remote fetching.
+    sourceCodeOrigins: ["VCS"]
+
+    # Skip paths excluded by .ort.yml (recommended for speed / signal).
     skipExcluded: true
-    packageTypes: ["PROJECT"]          # scan only the project, not all dependencies
-    sourceCodeOrigins: ["VCS"]         # only use the local VCS checkout
+
+    # Scanner selection + tuning
     scanners:
       ScanCode:
         options:
-          # These MUST be strings, not lists
+          # MUST be strings (not lists)
           commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
           commandLineNonConfig: "--processes,2"
-          # Optional: uncomment if you want licenses from LICENSE files preferred
+          # Optional: prefer licenses detected in LICENSE files
           # preferFileLicense: true
 
+    # Reuse scan results to avoid rescans (works great when you enable PACKAGE scans)
+    storages:
+      clearlyDefined:
+        serverUrl: "https://api.clearlydefined.io"
+      fileBased:
+        backend:
+          localFileStorage:
+            directory: "~/.ort/scanner/scan-results"
+            compression: false
+    storageReaders: ["clearlyDefined", "fileBased"]
+    storageWriters: ["fileBased"]
+
   advisor:
+    # Enable the two most reliable advisors by default.
     advisors:
       OSV:
         options:
-          # Switch endpoint if api.osv.dev is unreliable in your environment
-          serverUrl: "https://api.osv.dev"
-          # If timeouts persist, try:
-          # serverUrl: "https://api-staging.osv.dev"
+          serverUrl: "https://api.osv.dev"   # switch to https://api-staging.osv.dev if your network struggles
       OSSIndex: {}
-      # VulnerableCode: {}   # Uncomment if you also want VulnerableCode enabled
+      # VulnerableCode: {} # Enable only if you run a stable VC instance; otherwise leave disabled.
 
-analyzer:
-  allowDynamicVersions: false
-  downloadSources: false
-  enabled_package_managers:
-    - Gradle
-    - Maven
-    - NPM
-    - Bundler
-    - Pip
-  packageManagers:
-    Npm:
-      options:
-        legacyPeerDeps: true       # prevent peer dependency resolver issues
+  # Analyzer: enable what you commonly use; trim/add per repo.
+  analyzer:
+    allowDynamicVersions: false
+    downloadSources: false
+    enabled_package_managers:
+      - Gradle
+      - Maven
+      - NPM
+      - PNPM
+      - Yarn
+      - Pip
+      - GoMod
+      - Composer
+      - Bundler
+      - SBT
+    packageManagers:
+      Npm:
+        options:
+          legacyPeerDeps: true   # robust for mixed / legacy peer deps
+      PNPM: {}
+      Yarn: {}
+      Gradle: {}
+      Maven: {}
+      Pip: {}
+      GoMod: {}
+      Composer: {}
+      Bundler: {}
+      SBT: {}
 
-downloader:
-  skip:
-    - "**"
+  # Downloader: default is "allow" (no skip). Uncomment to force offline behavior.
+  # downloader:
+  #   skip:
+  #     - "**"   # Useful in air-gapped runs; prevents any remote fetch attempts.
