@@ -104,7 +104,7 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
         }
     }
 
-    // 4) Copyleft-limited in sources -> WARNING (tweak to ERROR if your policy requires)
+    // 4) Copyleft-limited in sources -> WARNING
     packageRule("COPYLEFT_LIMITED_IN_SOURCE") {
         require { -isExcluded() }
         licenseRule(
@@ -141,9 +141,8 @@ val ruleSet = ruleSet(ortResult, licenseInfoResolver, resolutionProvider) {
         )
     }
 
-    // 7) Dependency rules (OFF by default; enable with ORT_CHECK_DEPENDENCIES=true)
-    if (checkDependencies && packages.isNotEmpty()) {
-
+    // 7) Dependency rules (enable with ORT_CHECK_DEPENDENCIES=true)
+    if (checkDependencies) {
         dependencyRule("COPYLEFT_IN_DEPENDENCY") {
             licenseRule(
                 "COPYLEFT_IN_DEPENDENCY",
