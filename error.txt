@@ -3,34 +3,33 @@
 
 ort:
   scanner:
-    # Keep scans fast by default (only scan the repo, not all dependencies).
-    # Switch to ["PROJECT","PACKAGE"] when you want full dependency scans.
-    packageTypes: ["PROJECT"]
+    # Full scans by default. For faster local runs, change to ["PROJECT"].
+    packageTypes: ["PROJECT","PACKAGE"]
 
-    # Use the local checkout; avoids remote fetching.
+    # Only use the local checkout; avoids remote fetching.
     sourceCodeOrigins: ["VCS"]
 
-    # Skip paths excluded by .ort.yml (recommended for speed / signal).
+    # Respect excludes from .ort.yml
     skipExcluded: true
 
-    # Scanner selection + tuning
+    # Enable scanners (add/remove here)
     scanners:
       ScanCode:
         options:
           # MUST be strings (not lists)
           commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
           commandLineNonConfig: "--processes,2"
-          # Optional: prefer licenses detected in LICENSE files
           # preferFileLicense: true
+      Licensee: {}
 
-    # Reuse scan results to avoid rescans (works great when you enable PACKAGE scans)
+    # Reuse persisted scan results (you mounted $ORT_CACHE_DIR -> /home/ort/.cache)
     storages:
       clearlyDefined:
         serverUrl: "https://api.clearlydefined.io"
       fileBased:
         backend:
           localFileStorage:
-            directory: "~/.ort/scanner/scan-results"
+            directory: "/home/ort/.cache/scan-results"
             compression: false
     storageReaders: ["clearlyDefined", "fileBased"]
     storageWriters: ["fileBased"]
