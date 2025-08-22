@@ -1,12 +1,5 @@
-docker run --rm -u "$(id -u):$(id -g)" \
-  -v "$PROJECT_DIR":/project \
-  -v "$OUTPUT_DIR":/ort/data \
-  -v "$CONFIG_DIR":/home/ort/.ort/config \
-  -v "$ORT_CACHE_DIR":/home/ort/.cache \
-  -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE" \
-  "$ORT_IMAGE" scan \
-  --ort-file "/ort/data/analyzer-result/$(basename "$ANALYZE_RESULT")" \
-  --package-types "PROJECT,PACKAGE" \
-  --scanners "ScanCode,Licensee" \
-  --skip-excluded \
-  -o /ort/data/scanner-result
+Scanning projects with:
+        ScanCode (version 32.4.1)
+Scanning packages with:
+        ScanCode (version 32.4.1)
+Wrote scan result to '/ort/data/scanner-result/scan-result.yml' (0.01 MiB) in 801.280582ms.
