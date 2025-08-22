@@ -1,5 +1,6 @@
 Scanning projects with:
         ScanCode (version 32.4.1)
-Scanning packages with:
-        ScanCode (version 32.4.1)
-Wrote scan result to '/ort/data/scanner-result/scan-result.yml' (0.01 MiB) in 801.280582ms.
+IllegalArgumentException: The 'licensee' command is not available in the PATH environment.
+No scanner run was created.
+❌ Scan result missing or empty.
+❌ Pipeline failed (exit code 1)
