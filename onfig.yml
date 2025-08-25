@@ -1,43 +1,103 @@
----
-# This file contains global resolutions for issues and rule violations occurring in the OSS scan.
-# These resolutions are applied to all scanned projects, so make sure to only
-# add resolutions that are not specific to a project. Project specific
-# resolutions can be configured in the .ort.yml file of the project.
-#
-# For detailed documentation, see:
-# https://oss-review-toolkit.org/ort/docs/configuration/resolutions
+# Global resolutions for ORT findings (keep this file TIGHT).
+# Docs: https://oss-review-toolkit.org/ort/docs/configuration/resolutions
 
-# Structure of issue resolution:
-#
-# issues:
-# - message: "A regular expression matching the error message."
-#   reason: "One of: BUILD_TOOL_ISSUE|CANT_FIX_ISSUE|SCANNER_ISSUE"
-#   comment: "A comment further explaining why the reason above is applicable."
+################################################################################
+# ACTIVE, SAFE DEFAULTS
+# (These resolve only totally-empty messages / IDs, which should never happen,
+#  but avoids pipeline noise if a tool emits an empty string.)
+################################################################################
+
 issues:
-- message: "^$"
-  reason: "CANT_FIX_ISSUE"
-  comment: "An issue resolution which resolves only issues with an empty message."
-
-# Structure of policy rule violation resolution:
-#
-# rule_violations:
-# - message: "A regular expression matching the violation message."
-#   reason: "One of: CANT_FIX_EXCEPTION|DYNAMIC_LINKAGE_EXCEPTION|EXAMPLE_OF_EXCEPTION|LICENSE_ACQUIRED_EXCEPTION|PATENT_GRANT_EXCEPTION"
-#   comment: "A comment further explaining why the reason above is applicable."
+  - message: "^$"
+    reason: "CANT_FIX_ISSUE"
+    comment: "Ignore issues that contain no message at all."
 
 rule_violations:
-- message: "^$"
-  reason: "CANT_FIX_EXCEPTION"
-  comment: "A rule violation resolution which resolves only rule violations with an empty message."
+  - message: "^$"
+    reason: "CANT_FIX_EXCEPTION"
+    comment: "Ignore rule violations that contain no message at all."
 
-# Structure of vulnerability resolution:
-#
-# vulnerabilities:
-# - id: "A regular expression matching the vulnerability id."
-#   reason: "One of: CANT_FIX_VULNERABILITY|INEFFECTIVE_VULNERABILITY|INVALID_MATCH_VULNERABILITY|MITIGATED_VULNERABILITY
-#                    |WILL_NOT_FIX_VULNERABILITY|WORKAROUND_FOR_VULNERABILITY"
-#   comment: "A comment further explaining why the reason above is applicable."
 vulnerabilities:
-- id: "^$"
-  reason: "INVALID_MATCH_VULNERABILITY"
-  comment: "A vulnerability resolution which resolves only vulnerabilities with an empty id."
+  - id: "^$"
+    reason: "INVALID_MATCH_VULNERABILITY"
+    comment: "Ignore vulnerabilities that have an empty identifier."
+
+################################################################################
+# TEMPLATES (COMMENTED OUT)
+# Use these ONLY when you have a durable, global rationale.
+# Prefer anchors (^$), package coordinates, and CVE IDs to keep scope narrow.
+################################################################################
+
+# ------------------------------------------------------------------------------
+# Issues (scanner / build / analyzer)
+# ------------------------------------------------------------------------------
+# issues:
+#   - message: "(?i)^Scanner failed to download license text from .+$"
+#     reason: "SCANNER_ISSUE"
+#     comment: "Upstream server occasionally 403s; license detected elsewhere."
+#
+#   - message: "(?i)^Gradle: Could not resolve .+ due to checksum mismatch$"
+#     reason: "BUILD_TOOL_ISSUE"
+#     comment: "Known flaky mirror; artifacts revalidated by central proxy."
+
+# ------------------------------------------------------------------------------
+# Policy rule violations (aligns with your rules.kts message style)
+# ------------------------------------------------------------------------------
+# rule_violations:
+#   # 1) COPYLEFT-LIMITED direct+static dep falsely flagged (it’s actually dynamic)
+#   - message: "^\\[[^\\]]+\\] Direct, statically linked dependency under (?:ScanCode )?copyleft-limited license .+\\.$"
+#     reason: "DYNAMIC_LINKAGE_EXCEPTION"
+#     comment: "Library is dynamically linked at runtime across all targets; not statically linked."
+#
+#   # 2) LICENSE ACQUIRED (e.g., proprietary dep with commercial grant)
+#   - message: "^\\[[^\\]]+\\] (?:ScanCode )?proprietary license .+\\.$"
+#     reason: "LICENSE_ACQUIRED_EXCEPTION"
+#     comment: "Company holds a commercial license for this component; terms cover distribution."
+#
+#   # 3) Patents explicitly granted (rare; use only with counsel confirmation)
+#   - message: "^\\[[^\\]]+\\] .+ license .+\\.$"
+#     reason: "PATENT_GRANT_EXCEPTION"
+#     comment: "Patent grant verified by legal; obligations satisfied."
+#
+#   # 4) Example / documentation-only resource packaged but not shipped
+#   - message: "^\\[[^\\]]+\\] (?:ScanCode )?restricted license .+\\.$"
+#     reason: "EXAMPLE_OF_EXCEPTION"
+#     comment: "License-bound content is documentation-only and not part of shipped artifacts."
+
+# ------------------------------------------------------------------------------
+# Vulnerabilities (tie to exact CVEs and context)
+# ------------------------------------------------------------------------------
+# vulnerabilities:
+#   # 1) False positive CVE mapping (wrong CPE / module)
+#   - id: "^CVE-2023-12345$"
+#     reason: "INVALID_MATCH_VULNERABILITY"
+#     comment: "Package coordinates do not match affected CPE/module; vendor advisory confirms not affected."
+#
+#   # 2) Ineffective in our usage (dev/test tool, not in runtime deliverable)
+#   - id: "^CVE-2024-23456$"
+#     reason: "INEFFECTIVE_VULNERABILITY"
+#     comment: "Affects dev-time tooling only; excluded from shipped runtime/application image."
+#
+#   # 3) Mitigated by configuration (feature disabled / no exploitable vector)
+#   - id: "^CVE-2022-34567$"
+#     reason: "MITIGATED_VULNERABILITY"
+#     comment: "Vulnerable feature is disabled; network exposure and inputs constrained by policy."
+#
+#   # 4) Workaround or backport applied
+#   - id: "^CVE-2021-45678$"
+#     reason: "WORKAROUND_FOR_VULNERABILITY"
+#     comment: "Vendor backport applied; patch level verified in downstream package."
+#
+#   # 5) Will not fix (explicit, approved risk acceptance with expiry)
+#   - id: "^CVE-2020-56789$"
+#     reason: "WILL_NOT_FIX_VULNERABILITY"
+#     comment: "Risk accepted by security review; compensating controls in place. Revisit by 2025-12-31."
+
+################################################################################
+# NOTES
+# - Keep regexes ANCHORED and SPECIFIC.
+# - For rule_violations, match the exact message shape produced by your rules.kts:
+#     e.g., "^[coords] ... license $license (SOURCE)."
+# - Put project-specific exceptions in the project’s .ort.yml (not here).
+# - Revisit global resolutions quarterly and prune any that have become obsolete.
+################################################################################
