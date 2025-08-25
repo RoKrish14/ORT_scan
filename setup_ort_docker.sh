@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -Eeuo pipefail
 
 #############################################
 # Pretty Output (colors, symbols, headers)
@@ -34,20 +34,30 @@ trap 'rc=$?; if (( rc != 0 )); then error "Pipeline failed (exit code $rc)"; fi'
 PROJECT_DIR="${PROJECT_DIR:-$HOME/project}"                     # Local path for the repository
 CONFIG_DIR="${CONFIG_DIR:-$HOME/FOSShub/ort-config}"
 OUTPUT_DIR="${OUTPUT_DIR:-$HOME/project/ort-output-$(date +%Y%m%d-%H%M%S)}"
-ORT_IMAGE="${ORT_IMAGE:-ghcr.io/oss-review-toolkit/ort:latest}"
+ORT_IMAGE="${ORT_IMAGE:-ghcr.io/oss-review-toolkit/ort:latest}" # consider pinning a version
 CERT_FILE_HOST_PATH="${CERT_FILE_HOST_PATH:-$HOME/certificate.pem}"
 CERT_FILE_DOCKER_PATH="/tmp/certificate.pem"
 TRUST_STORE_PASSWORD="${TRUST_STORE_PASSWORD:-changeit}"
 BRANCH="${BRANCH:-main}"
-export JAVA_HOME="${JAVA_HOME:-/opt/java/openjdk}"
 
 # Java opts (custom truststore)
 JAVA_TOOL_OPTIONS_VALUE="-Djavax.net.ssl.trustStore=/ort/data/custom-cacerts.jks -Djavax.net.ssl.trustStorePassword=$TRUST_STORE_PASSWORD"
+
+# Policy toggles for rules.kts
+ORT_CHECK_DEPENDENCIES="${ORT_CHECK_DEPENDENCIES:-true}"
+ORT_CHECK_VULNS="${ORT_CHECK_VULNS:-true}"
+ORT_HIGH_SEVERITY="${ORT_HIGH_SEVERITY:-7.0}"
 
 # Performance caches
 TRIVY_CACHE_DIR="${TRIVY_CACHE_DIR:-$HOME/.cache/trivy}"   # persists Trivy vuln DB & cache
 ORT_CACHE_DIR="${ORT_CACHE_DIR:-$HOME/.cache/ort}"         # persists ORT cache between runs
 KEEP_TRIVY_CDX="${KEEP_TRIVY_CDX:-false}"                  # ORT already outputs CycloneDX; keep Trivy CDX only if needed
+
+# Optional docker pull policy (e.g., "--pull=always"); leave empty to use cache
+DOCKER_PULL_POLICY="${DOCKER_PULL_POLICY:-}"
+
+# Ensure sane default umask for CI
+umask 002 || true
 
 # Show config
 header "Configuration"
@@ -89,21 +99,20 @@ success "Output and cache directories ready"
 #############################################
 header "ORT Analyze"
 info "Starting analyzer (with custom truststore)..."
-docker run --rm \
+docker run $DOCKER_PULL_POLICY --rm \
+  -u "$(id -u):$(id -g)" \
   -v "$PROJECT_DIR":/project \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
   -v "$CERT_FILE_HOST_PATH":"$CERT_FILE_DOCKER_PATH" \
   -v "$OUTPUT_DIR":/ort/data \
   -v "$ORT_CACHE_DIR":/home/ort/.cache \
-  -e "JAVA_HOME=$JAVA_HOME" \
   --entrypoint /bin/sh \
   "$ORT_IMAGE" -c "
     cp \"\$JAVA_HOME/lib/security/cacerts\" /ort/data/custom-cacerts.jks && \
     keytool -import -trustcacerts -keystore /ort/data/custom-cacerts.jks \
       -storepass \"$TRUST_STORE_PASSWORD\" -alias example_cert \
       -file \"$CERT_FILE_DOCKER_PATH\" -noprompt && \
-    export JAVA_TOOL_OPTIONS=\"-Djavax.net.ssl.trustStore=/ort/data/custom-cacerts.jks \
-    -Djavax.net.ssl.trustStorePassword=$TRUST_STORE_PASSWORD\" && \
+    export JAVA_TOOL_OPTIONS='-Djavax.net.ssl.trustStore=/ort/data/custom-cacerts.jks -Djavax.net.ssl.trustStorePassword=$TRUST_STORE_PASSWORD' && \
     ort analyze \
       -i /project \
       -o /ort/data/analyzer-result \
@@ -123,7 +132,7 @@ fi
 #############################################
 header "ORT Scan"
 info "Running ORT scan (ScanCode; using persisted ORT cache)..."
-docker run --rm -u "$(id -u):$(id -g)" \
+docker run $DOCKER_PULL_POLICY --rm -u "$(id -u):$(id -g)" \
   -v "$PROJECT_DIR":/project \
   -v "$OUTPUT_DIR":/ort/data \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
@@ -133,6 +142,7 @@ docker run --rm -u "$(id -u):$(id -g)" \
   --ort-file "/ort/data/analyzer-result/$(basename "$ANALYZE_RESULT")" \
   --package-types "PROJECT,PACKAGE" \
   --skip-excluded \
+  --copyright-garbage-file /home/ort/.ort/config/copyright-garbage.yml \
   -o /ort/data/scanner-result
 
 SCAN_RESULT="$(find "$OUTPUT_DIR/scanner-result" -type f -name "scan-result*.yml" | sort | tail -n 1 || true)"
@@ -144,16 +154,18 @@ else
 fi
 
 #############################################
-# Syft & Trivy — run in parallel
+# SBOM Generation (Syft & Trivy in Parallel)
 #############################################
 header "SBOM Generation (Syft & Trivy in Parallel)"
 
 SYFT_OUTPUT_DIR="$OUTPUT_DIR/syft-result"
 TRIVY_OUTPUT_DIR="$OUTPUT_DIR/trivy-result"
 
+pids=()
+
 info "Launching Syft SPDX..."
 (
-  docker run --rm \
+  docker run $DOCKER_PULL_POLICY --rm -u "$(id -u):$(id -g)" \
     -e SYFT_CHECK_FOR_UPDATES=false \
     -v "$PROJECT_DIR":/project:ro \
     -v "$SYFT_OUTPUT_DIR":/output \
@@ -161,11 +173,11 @@ info "Launching Syft SPDX..."
     -e SSL_CERT_FILE=/tmp/certificate.pem \
     ghcr.io/anchore/syft:latest \
     /project -o spdx-json=/output/sbom-spdx.json
-) &
+) & pids+=($!)
 
 info "Launching Syft CycloneDX..."
 (
-  docker run --rm \
+  docker run $DOCKER_PULL_POLICY --rm -u "$(id -u):$(id -g)" \
     -e SYFT_CHECK_FOR_UPDATES=false \
     -v "$PROJECT_DIR":/project:ro \
     -v "$SYFT_OUTPUT_DIR":/output \
@@ -173,34 +185,38 @@ info "Launching Syft CycloneDX..."
     -e SSL_CERT_FILE=/tmp/certificate.pem \
     ghcr.io/anchore/syft:latest \
     /project -o cyclonedx-json=/output/sbom-cdx.json
-) &
+) & pids+=($!)
 
 info "Launching Trivy SPDX with persistent cache..."
 (
-  docker run --rm \
+  docker run $DOCKER_PULL_POLICY --rm -u "$(id -u):$(id -g)" \
     -v "$PROJECT_DIR":/project:ro \
     -v "$TRIVY_OUTPUT_DIR":/trivy \
     -v "$TRIVY_CACHE_DIR":/root/.cache/trivy \
     aquasec/trivy:latest fs /project \
     --format spdx-json \
     > "$TRIVY_OUTPUT_DIR/trivy-spdx.json"
-) &
+) & pids+=($!)
 
 if [[ "$KEEP_TRIVY_CDX" == "true" ]]; then
   info "Launching Trivy CycloneDX with persistent cache..."
   (
-    docker run --rm \
+    docker run $DOCKER_PULL_POLICY --rm -u "$(id -u):$(id -g)" \
       -v "$PROJECT_DIR":/project:ro \
       -v "$TRIVY_OUTPUT_DIR":/trivy \
       -v "$TRIVY_CACHE_DIR":/root/.cache/trivy \
       aquasec/trivy:latest fs /project \
       --format cyclonedx \
       > "$TRIVY_OUTPUT_DIR/trivy-cdx.json"
-  ) &
+  ) & pids+=($!)
 fi
 
-# Wait for background jobs
-wait
+# Wait for background jobs and ensure all succeeded
+fail=0
+for pid in "${pids[@]}"; do
+  if ! wait "$pid"; then fail=1; fi
+done
+(( fail == 0 )) || { error "One or more SBOM jobs failed"; exit 1; }
 
 SYFT_SPX="$SYFT_OUTPUT_DIR/sbom-spdx.json"
 SYFT_CDX="$SYFT_OUTPUT_DIR/sbom-cdx.json"
@@ -219,10 +235,12 @@ fi
 #############################################
 header "ORT Advise"
 info "Advisors: OSV, OSSIndex, VulnerableCode"
-docker run --rm \
+docker run $DOCKER_PULL_POLICY --rm \
+  -u "$(id -u):$(id -g)" \
   -v "$PROJECT_DIR":/project \
   -v "$OUTPUT_DIR":/ort/data \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
+  -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE" \
   "$ORT_IMAGE" advise \
   --advisors="OSV,OSSIndex,VulnerableCode" \
   --ort-file "/ort/data/scanner-result/$(basename "$SCAN_RESULT")" \
@@ -241,13 +259,20 @@ fi
 #############################################
 header "ORT Evaluate"
 info "Applying policy rules.kts"
-docker run --rm \
+docker run $DOCKER_PULL_POLICY --rm \
+  -u "$(id -u):$(id -g)" \
   -v "$PROJECT_DIR":/project:ro \
   -v "$OUTPUT_DIR":/ort/data \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
+  -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE" \
+  -e ORT_CHECK_DEPENDENCIES="$ORT_CHECK_DEPENDENCIES" \
+  -e ORT_CHECK_VULNS="$ORT_CHECK_VULNS" \
+  -e ORT_HIGH_SEVERITY="$ORT_HIGH_SEVERITY" \
   "$ORT_IMAGE" evaluate \
   --ort-file /ort/data/advisor-result/advisor-result.yml \
   -r /home/ort/.ort/config/rules.kts \
+  --license-classifications-file /home/ort/.ort/config/license-classifications.yml \
+  --resolutions-file /home/ort/.ort/config/resolutions.yml \
   -o /ort/data/evaluator-result
 
 EVAL_RESULT="$(find "$OUTPUT_DIR/evaluator-result" -type f -name "evaluation-result*.yml" | sort | tail -n 1 || true)"
@@ -263,10 +288,12 @@ fi
 #############################################
 header "ORT Report"
 info "Generating reports: CycloneDX, HtmlTemplate, WebApp, PdfTemplate"
-docker run --rm \
+docker run $DOCKER_PULL_POLICY --rm \
+  -u "$(id -u):$(id -g)" \
   -v "$PROJECT_DIR":/project:ro \
   -v "$OUTPUT_DIR":/ort/data \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
+  -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE" \
   "$ORT_IMAGE" report \
   --ort-file /ort/data/evaluator-result/"$(basename "$EVAL_RESULT")" \
   -o /ort/data/report-result \
