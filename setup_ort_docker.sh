@@ -307,6 +307,19 @@ else
   exit 1
 fi
 
+WEBAPP_HTML="$(ls -1 "$OUTPUT_DIR/report-result"/scan-report-web-app*.html 2>/dev/null | tail -n1)"
+STATIC_HTML="$(ls -1 "$OUTPUT_DIR/report-result"/scan-report*.html | grep -v web-app || true)"
+CYCLONEDX_JSON="$(ls -1 "$OUTPUT_DIR/report-result"/*cyclonedx*.json 2>/dev/null | tail -n1)"
+SPDX_JSON="$(ls -1 "$OUTPUT_DIR/report-result"/*spdx*.json 2>/dev/null | tail -n1)"
+PDFS="$(ls -1 "$OUTPUT_DIR/report-result"/*.pdf 2>/dev/null || true)"
+
+header "ORT Report (artifacts)"
+[[ -n "$WEBAPP_HTML"   ]] && success "WebApp        : $WEBAPP_HTML"   || warn "WebApp report not found."
+[[ -n "$STATIC_HTML"   ]] && info    "Static HTML   : $STATIC_HTML"
+[[ -n "$CYCLONEDX_JSON" ]] && info   "CycloneDX     : $CYCLONEDX_JSON"
+[[ -n "$SPDX_JSON"     ]] && info    "SPDX Document : $SPDX_JSON"
+[[ -n "$PDFS"          ]] && info    "PDF(s)        : $PDFS"
+
 #############################################
 # Summary
 #############################################
