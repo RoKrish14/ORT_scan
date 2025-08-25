@@ -1,78 +1,22 @@
-# Universal ORT configuration template
-# Goal: fast + reliable defaults, easy to tighten/expand per project.
-
-ort:
-  scanner:
-    # Full scans by default. For faster local runs, change to ["PROJECT"].
-    packageTypes: ["PROJECT","PACKAGE"]
-
-    # Only use the local checkout; avoids remote fetching.
-    sourceCodeOrigins: ["VCS"]
-
-    # Respect excludes from .ort.yml
-    skipExcluded: true
-
-    # Enable scanners (add/remove here)
-    scanners:
-      ScanCode:
-        options:
-          # MUST be strings (not lists)
-          commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
-          commandLineNonConfig: "--processes,2"
-          # preferFileLicense: true
-      Licensee: {}
-
-    # Reuse persisted scan results (you mounted $ORT_CACHE_DIR -> /home/ort/.cache)
-    storages:
-      clearlyDefined:
-        serverUrl: "https://api.clearlydefined.io"
-      fileBased:
-        backend:
-          localFileStorage:
-            directory: "/home/ort/.cache/scan-results"
-            compression: false
-    storageReaders: ["clearlyDefined", "fileBased"]
-    storageWriters: ["fileBased"]
-
-  advisor:
-    # Enable the two most reliable advisors by default.
-    advisors:
-      OSV:
-        options:
-          serverUrl: "https://api.osv.dev"   # switch to https://api-staging.osv.dev if your network struggles
-      OSSIndex: {}
-      # VulnerableCode: {} # Enable only if you run a stable VC instance; otherwise leave disabled.
-
-  # Analyzer: enable what you commonly use; trim/add per repo.
-  analyzer:
-    allowDynamicVersions: false
-    downloadSources: false
-    enabled_package_managers:
-      - Gradle
-      - Maven
-      - NPM
-      - PNPM
-      - Yarn
-      - Pip
-      - GoMod
-      - Composer
-      - Bundler
-      - SBT
-    packageManagers:
-      Npm:
-        options:
-          legacyPeerDeps: true   # robust for mixed / legacy peer deps
-      PNPM: {}
-      Yarn: {}
-      Gradle: {}
-      Maven: {}
-      Pip: {}
-      GoMod: {}
-      Composer: {}
-      Bundler: {}
-      SBT: {}
-
-  # Downloader: default is "allow" (no skip). Uncomment to force offline behavior.
-  # downloader:
-  #   skip:
-  #     - "**"   # Useful in air-gapped runs; prevents any remote fetch attempts.
+Exception in thread "main" com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field "garbage" (class org.ossreviewtoolkit.model.config.CopyrightGarbage), not marked as ignorable (2 known properties: "items", "patterns"])
+ at [Source: (File); line: 48, column: 1] (through reference chain: org.ossreviewtoolkit.model.config.CopyrightGarbage["garbage"])
+	at com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.from(UnrecognizedPropertyException.java:61)
+	at com.fasterxml.jackson.databind.DeserializationContext.handleUnknownProperty(DeserializationContext.java:1180)
+	at com.fasterxml.jackson.databind.deser.std.StdDeserializer.handleUnknownProperty(StdDeserializer.java:2244)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.handleUnknownProperty(BeanDeserializerBase.java:1823)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.handleUnknownProperties(BeanDeserializerBase.java:1773)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:563)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase.java:1499)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
+	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
+	at com.fasterxml.jackson.databind.MappingIterator.nextValue(MappingIterator.java:293)
+	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand$run$$inlined$readValue$2.nextValue(Extensions.kt:92)
+	at com.fasterxml.jackson.databind.MappingIterator.readAll(MappingIterator.java:333)
+	at com.fasterxml.jackson.databind.MappingIterator.readAll(MappingIterator.java:319)
+	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand.run(EvaluateCommand.kt:647)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.parse(CoreCliktCommand.kt:107)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:78)
+	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:90)
+	at org.ossreviewtoolkit.cli.OrtMainKt.main(OrtMain.kt:86)
+❌ Evaluator result missing or empty.
+❌ Pipeline failed (exit code 1)
