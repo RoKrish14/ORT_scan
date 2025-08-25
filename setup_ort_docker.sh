@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
+set -uo pipefail
 
 #############################################
 # Pretty Output (colors, symbols, headers)
@@ -131,8 +131,7 @@ docker run --rm -u "$(id -u):$(id -g)" \
   -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE" \
   "$ORT_IMAGE" scan \
   --ort-file "/ort/data/analyzer-result/$(basename "$ANALYZE_RESULT")" \
-  --package-types PROJECT \
-  --project-scanners ScanCode \
+  --package-types "PROJECT,PACKAGE" \
   --skip-excluded \
   -o /ort/data/scanner-result
 
@@ -219,13 +218,13 @@ fi
 # ORT Advise
 #############################################
 header "ORT Advise"
-info "Advisors: OSV, OSSIndex"
+info "Advisors: OSV, OSSIndex, VulnerableCode"
 docker run --rm \
   -v "$PROJECT_DIR":/project \
   -v "$OUTPUT_DIR":/ort/data \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
   "$ORT_IMAGE" advise \
-  --advisors="OSV,OSSIndex" \
+  --advisors="OSV,OSSIndex,VulnerableCode" \
   --ort-file "/ort/data/scanner-result/$(basename "$SCAN_RESULT")" \
   -o /ort/data/advisor-result
 
@@ -271,7 +270,7 @@ docker run --rm \
   "$ORT_IMAGE" report \
   --ort-file /ort/data/evaluator-result/"$(basename "$EVAL_RESULT")" \
   -o /ort/data/report-result \
-  --report-formats "CycloneDX,HtmlTemplate,WebApp,PdfTemplate"
+  --report-formats "SpdxDocument,CycloneDX,HtmlTemplate,WebApp,PdfTemplate"
 
 REPORT_RESULT="$(find "$OUTPUT_DIR/report-result" -type f \( -name "*.html" -o -name "*.json" \) | sort | tail -n 1 || true)"
 if [[ -s "${REPORT_RESULT:-}" ]]; then
