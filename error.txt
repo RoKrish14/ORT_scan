@@ -3,26 +3,48 @@ Looking for evaluator-specific configuration in the following files, directories
         /home/ort/.ort/config/license-classifications.yml
         /home/ort/.ort/config/resolutions.yml
         /home/ort/.ort/config/rules.kts
-Exception in thread "main" com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field "aliases" (class org.ossreviewtoolkit.model.licenses.LicenseClassifications), not marked as ignorable (2 known properties: "categorizations", "categories"])
- at [Source: (File); line: 98, column: 3] (through reference chain: org.ossreviewtoolkit.model.licenses.LicenseClassifications["aliases"])
-	at com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException.from(UnrecognizedPropertyException.java:61)
-	at com.fasterxml.jackson.databind.DeserializationContext.handleUnknownProperty(DeserializationContext.java:1180)
-	at com.fasterxml.jackson.databind.deser.std.StdDeserializer.handleUnknownProperty(StdDeserializer.java:2244)
-	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.handleUnknownProperty(BeanDeserializerBase.java:1823)
-	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.handleUnknownVanilla(BeanDeserializerBase.java:1801)
-	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:271)
-	at com.fasterxml.jackson.databind.deser.BeanDeserializer._deserializeUsingPropertyBased(BeanDeserializer.java:466)
-	at com.fasterxml.jackson.databind.deser.BeanDeserializerBase.deserializeFromObjectUsingNonDefault(BeanDeserializerBase.java:1499)
-	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserializeFromObject(BeanDeserializer.java:340)
-	at com.fasterxml.jackson.databind.deser.BeanDeserializer.deserialize(BeanDeserializer.java:177)
-	at com.fasterxml.jackson.databind.MappingIterator.nextValue(MappingIterator.java:293)
-	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand$run$$inlined$readValue$4.nextValue(Extensions.kt:92)
-	at com.fasterxml.jackson.databind.MappingIterator.readAll(MappingIterator.java:333)
-	at com.fasterxml.jackson.databind.MappingIterator.readAll(MappingIterator.java:319)
-	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand.run(EvaluateCommand.kt:668)
+19:57:35.428 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'spdx'. (script.rules.kts:30:29)
+19:57:35.431 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'spdx'. (script.rules.kts:31:29)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'spdx'. (script.rules.kts:32:29)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'pkg'. (script.rules.kts:81:18)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:104:17)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:106:17)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:108:17)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:110:17)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:112:17)
+19:57:35.432 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:114:17)
+19:57:35.433 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:116:17)
+19:57:35.433 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected. (script.rules.kts:118:17)
+19:57:35.433 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'concludedLicense'. (script.rules.kts:146:48)
+19:57:35.433 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'mappings'. (script.rules.kts:149:23)
+19:57:35.433 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'getDetectedLicenses'. (script.rules.kts:151:47)
+19:57:35.433 [main] ERROR org.ossreviewtoolkit.utils.scripting.ScriptRunner - Unresolved reference 'not' for operator '!'. (script.rules.kts:153:46)
+Exception in thread "main" java.lang.RuntimeException: Using JDK home inferred from java.home: /opt/java/openjdk
+Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
+Loading modules: [java.se, jdk.accessibility, jdk.attach, jdk.compiler, jdk.dynalink, jdk.httpserver, jdk.incubator.vector, jdk.jartool, jdk.javadoc, jdk.jconsole, jdk.jdi, jdk.jfr, jdk.jshell, jdk.jsobject, jdk.management, jdk.management.jfr, jdk.net, jdk.nio.mapmode, jdk.sctp, jdk.security.auth, jdk.security.jgss, jdk.unsupported, jdk.unsupported.desktop, jdk.xml.dom, kotlin.stdlib, kotlin.script.runtime, kotlin.reflect, java.base, java.compiler, java.datatransfer, java.desktop, java.xml, java.instrument, java.logging, java.management, java.management.rmi, java.rmi, java.naming, java.net.http, java.prefs, java.scripting, java.security.jgss, java.security.sasl, java.sql, java.transaction.xa, java.sql.rowset, java.xml.crypto, jdk.internal.jvmstat, jdk.internal.opt, jdk.zipfs, jdk.management.agent, jdk.jdwp.agent, jdk.internal.ed, jdk.internal.le]
+Unresolved reference 'spdx'.
+Unresolved reference 'spdx'.
+Unresolved reference 'spdx'.
+Unresolved reference 'pkg'.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Argument type mismatch: actual type is 'Set<SpdxSingleLicenseExpression>', but 'Set<String>' was expected.
+Unresolved reference 'concludedLicense'.
+Unresolved reference 'mappings'.
+Unresolved reference 'getDetectedLicenses'.
+Unresolved reference 'not' for operator '!'.
+	at kotlin.script.experimental.api.ErrorHandlingKt.valueOrThrow(errorHandling.kt:305)
+	at org.ossreviewtoolkit.utils.scripting.ScriptRunner.runScript(ScriptRunner.kt:72)
+	at org.ossreviewtoolkit.evaluator.Evaluator.run(Evaluator.kt:56)
+	at org.ossreviewtoolkit.plugins.commands.evaluator.EvaluateCommand.run(EvaluateCommand.kt:335)
 	at com.github.ajalt.clikt.core.CoreCliktCommandKt.parse(CoreCliktCommand.kt:107)
 	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:78)
 	at com.github.ajalt.clikt.core.CoreCliktCommandKt.main(CoreCliktCommand.kt:90)
 	at org.ossreviewtoolkit.cli.OrtMainKt.main(OrtMain.kt:86)
+❌ Evaluator result missing or empty.
 ❌ Pipeline failed (exit code 1)
-mypc@mypc-VirtualBox:~/FOSShub$ 
