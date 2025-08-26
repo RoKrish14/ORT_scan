@@ -1,0 +1,78 @@
+# Universal ORT configuration template
+# Goal: fast + reliable defaults, easy to tighten/expand per project.
+
+ort:
+  scanner:
+    # Full scans by default. For faster local runs, change to ["PROJECT"].
+    packageTypes: ["PROJECT","PACKAGE"]
+
+    # Only use the local checkout; avoids remote fetching.
+    #sourceCodeOrigins: ["VCS"]
+
+    # Respect excludes from .ort.yml
+    skipExcluded: true
+
+    # Enable scanners (add/remove here)
+    scanners:
+      ScanCode: {}
+        #options:
+          # MUST be strings (not lists)
+          #commandLine: "--copyright,--license,--info,--strip-root,--timeout,300"
+          #commandLineNonConfig: "--processes,2"
+          # preferFileLicense: true
+      #Licensee: {}
+
+    # Reuse persisted scan results (you mounted $ORT_CACHE_DIR -> /home/ort/.cache)
+    storages:
+      clearlyDefined:
+        serverUrl: "https://api.clearlydefined.io"
+      fileBased:
+        backend:
+          localFileStorage:
+            directory: "/home/ort/.cache/scan-results"
+            compression: false
+    storageReaders: ["clearlyDefined", "fileBased"]
+    storageWriters: ["fileBased"]
+
+  advisor:
+    # Enable the two most reliable advisors by default.
+    advisors:
+      OSV:
+        options:
+          serverUrl: "https://api.osv.dev"   # switch to https://api-staging.osv.dev if your network struggles
+      OSSIndex: {}
+      # VulnerableCode: {} # Enable only if you run a stable VC instance; otherwise leave disabled.
+
+  # Analyzer: enable what you commonly use; trim/add per repo.
+  analyzer:
+    allowDynamicVersions: false
+    downloadSources: false
+    enabled_package_managers:
+      - Gradle
+      - Maven
+      - NPM
+      - PNPM
+      - Yarn
+      - Pip
+      - GoMod
+      - Composer
+      - Bundler
+      - SBT
+    packageManagers:
+      Npm:
+        options:
+          legacyPeerDeps: true   # robust for mixed / legacy peer deps
+      PNPM: {}
+      Yarn: {}
+      Gradle: {}
+      Maven: {}
+      Pip: {}
+      GoMod: {}
+      Composer: {}
+      Bundler: {}
+      SBT: {}
+
+  # Downloader: default is "allow" (no skip). Uncomment to force offline behavior.
+  # downloader:
+  #   skip:
+  #     - "**"   # Useful in air-gapped runs; prevents any remote fetch attempts.
