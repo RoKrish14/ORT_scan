@@ -1,1 +1,37 @@
-{"$schema":"http://cyclonedx.org/schema/bom-1.6.schema.json","bomFormat":"CycloneDX","specVersion":"1.6","serialNumber":"urn:uuid:ceec2fa0-9e1d-4e85-abfd-da0a07029174","version":1,"metadata":{"timestamp":"2025-08-25T20:28:29Z","tools":{"components":[{"type":"application","author":"anchore","name":"syft","version":"1.31.0"}]},"component":{"bom-ref":"51f6561dc978bfb7","type":"file","name":"/project"}},"components":[{"bom-ref":"6cd6f72dadf84e81","type":"application","name":"Configurator","version":"V1.0.0+4.1.0","cpe":"cpe:2.3:a:Configurator:Configurator:V1.0.0\\+4.1.0:*:*:*:*:*:*:*","properties":[{"name":"syft:package:foundBy","value":"pe-binary-package-cataloger"},{"name":"syft:package:type","value":"binary"},{"name":"syft:package:metadataType","value":"pe-binary"},{"name":"syft:location:0:path","value":"/ZF_Lifetec_Scania_SBoM_ZESxxxxxx/Supplied_files/40_BSW/00_Comm/30_Supp/J1939_Stack_Hirain/AZ250154_V1.0.0/BSW_Project_V1.0.0/Tool/00_Tool/Configurator_install.exe"}]},{"bom-ref":"1769cc016ae3c62b","type":"application","name":"InstallAnywhere","version":"21, 0, 0, 0","cpe":"cpe:2.3:a:InstallAnywhere:InstallAnywhere:21\\,_0\\,_0\\,_0:*:*:*:*:*:*:*","properties":[{"name":"syft:package:foundBy","value":"pe-binary-package-cataloger"},{"name":"syft:package:type","value":"binary"},{"name":"syft:package:metadataType","value":"pe-binary"},{"name":"syft:location:0:path","value":"/ZF_Lifetec_Scania_SBoM_ZESxxxxxx/Supplied_files/40_BSW/50_DevTools/02_IDE/S32DS.3.5_b220726_win32.x86_64.exe"}]},{"bom-ref":"27055a406dd631bd","type":"file","name":"/project/ZF_Lifetec_Scania_SBoM_ZESxxxxxx/Supplied_files/40_BSW/00_Comm/30_Supp/J1939_Stack_Hirain/AZ250154_V1.0.0/BSW_Project_V1.0.0/Tool/00_Tool/Configurator_install.exe","hashes":[{"alg":"SHA-1","content":"7a13a8b981b1d20aac1b5f7b94beecd293e12b9d"},{"alg":"SHA-256","content":"a9c47de8936492f2ec37fee7743a8f7e0c3ad8fbd29775708bd6bf95d46f6a70"}]},{"bom-ref":"cb8f4d37de2591f2","type":"file","name":"/project/ZF_Lifetec_Scania_SBoM_ZESxxxxxx/Supplied_files/40_BSW/50_DevTools/02_IDE/S32DS.3.5_b220726_win32.x86_64.exe","hashes":[{"alg":"SHA-1","content":"6fc93927a01132a94fbfcd818a88883907c8e931"},{"alg":"SHA-256","content":"47c356fd4001320d70a9ff142829e79800e576834e36407ada95f0cba5cb1708"}]}]}
+{
+  "bomFormat" : "CycloneDX",
+  "specVersion" : "1.6",
+  "serialNumber" : "urn:uuid:29e23980-5f30-4347-8de6-9fe3e853fb9d",
+  "version" : 1,
+  "metadata" : {
+    "timestamp" : "2025-08-26T08:20:55Z",
+    "tools" : {
+      "components" : [
+        {
+          "type" : "application",
+          "name" : "OSS Review Toolkit",
+          "version" : "66.0.3"
+        }
+      ],
+      "services" : [ ]
+    },
+    "component" : {
+      "type" : "file",
+      "bom-ref" : "https://github.com/eclipse-tractusx/puris.git@fa255a0b5b2a8a9ee296e7621ea99661f4a12dec",
+      "name" : "https://github.com/eclipse-tractusx/puris.git",
+      "version" : "fa255a0b5b2a8a9ee296e7621ea99661f4a12dec"
+    },
+    "licenses" : [
+      {
+        "expression" : "CC0-1.0"
+      }
+    ]
+  },
+  "externalReferences" : [
+    {
+      "type" : "vcs",
+      "url" : "https://github.com/eclipse-tractusx/puris.git",
+      "comment" : "URL to the Git repository of the projects"
+    }
+  ]
+}
