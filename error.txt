@@ -1,2 +1,5 @@
-19:12:42.626 [DefaultDispatcher-worker-2] ERROR org.ossreviewtoolkit.analyzer.PackageManager - Gradle failed to resolve dependencies for path 'CyS-Training/sw-tools/sw-sip-hsm/DaVinciConfigurator/Core/AutomationInterface/_doc/templates/Gradle-Project/build.gradle': BuildException: Could not fetch model of type 'OrtDependencyTreeModel' using connection to Gradle distribution 'https://services.gradle.org/distributions/gradle-8.9-bin.zip'.
-Caused by: LocationAwareException: Script '/project/CyS-Training/sw-tools/sw-sip-hsm/DaVinciConfigurator/Core/AutomationInterface/_doc/templates/Gradle-Project/dvCfgAutomationBootstrap.gradle' line: 69
+excludes:
+  paths:
+    - pattern: "CyS-Training/sw-tools/sw-sip-hsm/DaVinciConfigurator/Core/AutomationInterface/_doc/templates/**"
+      reason: BUILD_TOOL_OF
+      comment: "Exclude DaVinciConfigurator Gradle template not part of the product build."
