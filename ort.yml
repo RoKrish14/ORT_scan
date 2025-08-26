@@ -9,12 +9,6 @@ analyzer:
 
 excludes:
   paths:
-    - pattern: "mime-types/**"
-      reason: "PROVIDED_BY"
-      comment: "Excluding vendored mime-types dependency"
-    - pattern: "CyS-Training/sw-tools/sw-sip-bsw/**"
-      reason: "BUILD_TOOL_OF"
-      comment: "Exclude DaVinci BSW Configurator and related files from ORT analysis."
     - pattern: "**/cmake-sbom/dist/common/**"
       reason: "BUILD_TOOL_OF"
       comment: "Exclude training / generated SBOM configs without VCS context."
@@ -124,3 +118,4 @@ curations:
     reason: "CODE"
     comment: >-
       This file uses several variables named after licenses.
+
