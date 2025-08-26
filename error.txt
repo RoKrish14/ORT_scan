@@ -1,5 +1,13 @@
-excludes:
-  paths:
-    - pattern: "CyS-Training/sw-tools/sw-sip-hsm/DaVinciConfigurator/Core/AutomationInterface/_doc/templates/**"
-      reason: BUILD_TOOL_OF
-      comment: "Exclude DaVinciConfigurator Gradle template not part of the product build."
+Downloading https://services.gradle.org/distributions/gradle-8.9-bin.zip
+...............................................................20:06:30.667 [DefaultDispatcher-worker-1] WARN  org.ossreviewtoolkit.plugins.packagemanagers.python.utils.PythonInspector - The number of unique dependencies (4) does not match the number of packages (14), which might indicate a bug in python-inspector.
+20:06:30.670 [DefaultDispatcher-worker-1] WARN  org.ossreviewtoolkit.plugins.packagemanagers.python.utils.PythonInspector - Packages that are not contained as dependencies: [pkg:pypi/reuse, pkg:pypi/poetry-core, pkg:pypi/spdx-tools, pkg:pypi/ntia-conformance-checker]
+20:06:30.671 [DefaultDispatcher-worker-1] WARN  org.ossreviewtoolkit.plugins.packagemanagers.python.utils.PythonInspector - Dependencies that are not contained as packages: [pkg:pypi/beartype@0.21.0, pkg:pypi/boolean-py@5.0, pkg:pypi/click@8.2.2, pkg:pypi/license-expression@30.4.4, pkg:pypi/ntia-conformance-checker@3.2.0, pkg:pypi/ply@3.11, pkg:pypi/pyparsing@3.2.3, pkg:pypi/pyyaml@6.0.2, pkg:pypi/rdflib@7.1.4, pkg:pypi/reuse@5.0.2, pkg:pypi/semantic-version@2.10.0, pkg:pypi/spdx-tools@0.8.3, pkg:pypi/uritools@5.0.0, pkg:pypi/xmltodict@0.14.2]
+..................................................................
+20:10:10.640 [DefaultDispatcher-worker-2] ERROR org.ossreviewtoolkit.analyzer.PackageManager - Gradle failed to resolve dependencies for path 'CyS-Training/sw-tools/sw-sip-hsm/DaVinciConfigurator/Core/AutomationInterface/_doc/templates/Gradle-Project/build.gradle': BuildException: Could not fetch model of type 'OrtDependencyTreeModel' using connection to Gradle distribution 'https://services.gradle.org/distributions/gradle-8.9-bin.zip'.
+Caused by: LocationAwareException: Script '/project/CyS-Training/sw-tools/sw-sip-hsm/DaVinciConfigurator/Core/AutomationInterface/_doc/templates/Gradle-Project/dvCfgAutomationBootstrap.gradle' line: 69
+A problem occurred evaluating script.
+    Caused by: GradleScriptException: A problem occurred evaluating script.
+        Caused by: RuntimeException: The project.ext.dvCfgInstallation property does not point to a valid DaVinci Configurator or DaVinci Adaptive Configuration location. Please correct the property in projectConfig.gradle. Actual Path is: <e.g. D:/Testing/MyDelivery/external/DaVinciConfigurator>
+Downloading https://services.gradle.org/distributions/gradle-6.8.2-bin.zip
+.............................................................................................
+
