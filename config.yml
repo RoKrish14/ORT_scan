@@ -7,7 +7,7 @@ ort:
     packageTypes: ["PROJECT","PACKAGE"]
 
     # Only use the local checkout; avoids remote fetching.
-    #sourceCodeOrigins: ["VCS"]
+    sourceCodeOrigins: ["ARTIFACT","VCS"]
 
     # Respect excludes from .ort.yml
     skipExcluded: true
