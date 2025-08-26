@@ -32,7 +32,7 @@ trap 'rc=$?; if (( rc != 0 )); then error "Pipeline failed (exit code $rc)"; fi'
 # Configuration
 #############################################
 PROJECT_DIR="${PROJECT_DIR:-$HOME/project}"                     # Local path for the repository
-CONFIG_DIR="${CONFIG_DIR:-$HOME/FOSShub/ort-config}"
+CONFIG_DIR="${CONFIG_DIR:-$HOME/FOSShub/ort-config}"            # contains config.yml, rules.kts, license-classifications.yml, etc.
 OUTPUT_DIR="${OUTPUT_DIR:-$HOME/project/ort-output-$(date +%Y%m%d-%H%M%S)}"
 ORT_IMAGE="${ORT_IMAGE:-ghcr.io/oss-review-toolkit/ort:latest}" # consider pinning a version
 CERT_FILE_HOST_PATH="${CERT_FILE_HOST_PATH:-$HOME/certificate.pem}"
@@ -51,8 +51,9 @@ ORT_HIGH_SEVERITY="${ORT_HIGH_SEVERITY:-7.0}"
 # Fresh scan (no caches, no scan storage reuse) — default ON
 FRESH_SCAN="${FRESH_SCAN:-true}"
 RUNTIME_CONFIG="$OUTPUT_DIR/ort-config-fresh.yml"
+BASE_CONFIG_IN_CONTAINER="/home/ort/.ort/config/config.yml"
 
-# Optional: strip .git to avoid remote VCS metadata leaking into SBOMs (default OFF)
+# Optional: strip .git to avoid remote VCS metadata in SBOMs (default OFF)
 STRIP_GIT="${STRIP_GIT:-false}"
 
 # Performance caches (used only if FRESH_SCAN=false)
@@ -104,18 +105,17 @@ mkdir -p "$TRIVY_CACHE_DIR" "$ORT_CACHE_DIR" || true
 success "Output and cache directories ready"
 
 #############################################
-# Fresh-scan config + mounts
+# Fresh-scan overlay config (merged with your config.yml)
 #############################################
-CONFIG_FLAG_STR=""
-CONFIG_FLAG=()
+CONFIG_FLAGS=()
 if [[ "$FRESH_SCAN" == "true" ]]; then
-  header "Fresh-scan config"
+  header "Fresh-scan overlay config"
   cat > "$RUNTIME_CONFIG" <<'YAML'
 ort:
   scanner:
-    storages: {}
     storageReaders: []
     storageWriters: []
+    storages: {}
     scanners:
       ScanCode:
         options:
@@ -124,15 +124,17 @@ ort:
       SCANOSS:
         options:
           readFromStorage: false
-          writeToStorage: false
+          writeFromStorage: false
       Licensee:
         options:
           readFromStorage: false
           writeToStorage: false
 YAML
-  success "Created: $RUNTIME_CONFIG"
-  CONFIG_FLAG_STR="-c /ort/data/$(basename "$RUNTIME_CONFIG")"
-  CONFIG_FLAG=( -c "/ort/data/$(basename "$RUNTIME_CONFIG")" )
+  success "Created overlay: $RUNTIME_CONFIG"
+  # Pass BOTH your base config.yml and the fresh overlay; last one wins for overlapping keys.
+  CONFIG_FLAGS=( -c "$BASE_CONFIG_IN_CONTAINER" -c "/ort/data/$(basename "$RUNTIME_CONFIG")" )
+else
+  CONFIG_FLAGS=( -c "$BASE_CONFIG_IN_CONTAINER" )
 fi
 
 # Compose cache mounts conditionally
@@ -176,7 +178,7 @@ docker run $DOCKER_PULL_POLICY --rm \
       -storepass \"$TRUST_STORE_PASSWORD\" -alias example_cert \
       -file \"$CERT_FILE_DOCKER_PATH\" -noprompt && \
     export JAVA_TOOL_OPTIONS='-Djavax.net.ssl.trustStore=/ort/data/custom-cacerts.jks -Djavax.net.ssl.trustStorePassword=$TRUST_STORE_PASSWORD' && \
-    ort $CONFIG_FLAG_STR analyze \
+    ort ${CONFIG_FLAGS[*]} analyze \
       -i /project \
       -o /ort/data/analyzer-result \
       --repository-configuration-file /project/.ort.yml
@@ -202,7 +204,7 @@ docker run $DOCKER_PULL_POLICY --rm -u "$(id -u):$(id -g)" \
   "${ORT_CACHE_MOUNT[@]}" \
   -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE" \
   "$ORT_IMAGE" scan \
-  "${CONFIG_FLAG[@]}" \
+  "${CONFIG_FLAGS[@]}" \
   --ort-file "/ort/data/analyzer-result/$(basename "$ANALYZE_RESULT")" \
   --package-types "PROJECT,PACKAGE" \
   --skip-excluded \
@@ -305,7 +307,7 @@ docker run $DOCKER_PULL_POLICY --rm \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
   -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE" \
   "$ORT_IMAGE" advise \
-  "${CONFIG_FLAG[@]}" \
+  "${CONFIG_FLAGS[@]}" \
   --advisors="OSV,OSSIndex,VulnerableCode" \
   --ort-file "/ort/data/scanner-result/$(basename "$SCAN_RESULT")" \
   -o /ort/data/advisor-result
@@ -333,7 +335,7 @@ docker run $DOCKER_PULL_POLICY --rm \
   -e ORT_CHECK_VULNS="$ORT_CHECK_VULNS" \
   -e ORT_HIGH_SEVERITY="$ORT_HIGH_SEVERITY" \
   "$ORT_IMAGE" evaluate \
-  "${CONFIG_FLAG[@]}" \
+  "${CONFIG_FLAGS[@]}" \
   --ort-file /ort/data/advisor-result/advisor-result.yml \
   -r /home/ort/.ort/config/rules.kts \
   --license-classifications-file /home/ort/.ort/config/license-classifications.yml \
@@ -360,7 +362,7 @@ docker run $DOCKER_PULL_POLICY --rm \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
   -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE -Xmx4g" \
   "$ORT_IMAGE" report \
-  "${CONFIG_FLAG[@]}" \
+  "${CONFIG_FLAGS[@]}" \
   --ort-file /ort/data/evaluator-result/"$(basename "$EVAL_RESULT")" \
   -o /ort/data/report-result \
   --report-formats "CycloneDX,HtmlTemplate,WebApp,PdfTemplate" \
@@ -374,7 +376,7 @@ if ! docker run $DOCKER_PULL_POLICY --rm \
   -v "$CONFIG_DIR":/home/ort/.ort/config \
   -e JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS_VALUE -Xmx2g" \
   "$ORT_IMAGE" report \
-  "${CONFIG_FLAG[@]}" \
+  "${CONFIG_FLAGS[@]}" \
   --ort-file /ort/data/evaluator-result/"$(basename "$EVAL_RESULT")" \
   -o /ort/data/report-result \
   --report-formats "SpdxDocument"; then
